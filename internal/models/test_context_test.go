@@ -40,7 +40,8 @@ func userFixture(t *testing.T, ctx *testContext, email string) *User {
 }
 
 func broadcastFixture(t *testing.T, ctx *testContext, user *User) *Broadcast {
-	broadcast, err := CreateBroadcast(ctx.db, user)
+	broadcast := NewBroadcast(ctx.db, user.ID)
+	err := broadcast.Save(user)
 	assert.Nil(t, err)
 
 	return broadcast

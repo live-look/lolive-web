@@ -10,7 +10,9 @@ func TestCreateBroadcast(t *testing.T) {
 	defer ctx.db.Close()
 
 	user := userFixture(t, ctx, "broadcast_creating@camforchat-test.net")
-	broadcast, err := CreateBroadcast(ctx.db, user)
+	broadcast := NewBroadcast(ctx.db, user.ID)
+
+	err := broadcast.Save(user)
 	assert.Nil(t, err)
 
 	assert.Equal(t, BroadcastStateOffline, broadcast.State)

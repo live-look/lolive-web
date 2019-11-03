@@ -15,8 +15,15 @@ func BroadcastsCreate(w http.ResponseWriter, r *http.Request) {
 	logger, _ := appMiddleware.GetLog(r.Context())
 	user, _ := appMiddleware.GetCurrentUser(r.Context())
 
-	broadcast, err := models.CreateBroadcast(db, user)
-	if err != nil {
+	broadcast := models.NewBroadcast(db, user.ID)
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(broadcast); err != nil {
+		logger.Error("decoding request body failed", zap.Error(err))
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	if err := broadcast.Save(user); err != nil {
 		logger.Error("creating broadcast failed", zap.Error(err))
 		http.Error(w, http.StatusText(422), 422)
 		return
