@@ -5,44 +5,66 @@ import (
 	"context"
 	"github.com/go-chi/chi/middleware"
 	"github.com/volatiletech/authboss"
+	"go.uber.org/zap"
+	"log"
 	"net/http"
 )
+
+var (
+	ctxKeyCurrentUser = contextKey("CurrentUser")
+)
+
+// GetCurrentUser extract current user from context
+func GetCurrentUser(ctx context.Context) (*models.User, bool) {
+	user, ok := ctx.Value(ctxKeyCurrentUser).(*models.User)
+	return user, ok
+}
 
 // CurrentUserDataInject is middleware for injecting currentUser data
 func CurrentUserDataInject(ab *authboss.Authboss) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
+			var (
+				currentUserID   int64
+				currentUserName string
+				user            *models.User
+			)
+			logger, ok := GetLog(r.Context())
+			if !ok {
+				log.Println("Can't get logger from context")
+				http.Error(w, http.StatusText(500), 500)
+				return
+			}
+
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+			currentUser, err := ab.LoadCurrentUser(&r)
+			if err != nil && err != authboss.ErrUserNotFound {
+				logger.Error("loading current user failed", zap.Error(err))
+				http.Error(w, http.StatusText(500), 500)
+				return
+			}
 
-			data := layoutData(w, &r, ab)
+			if currentUser != nil {
+				user = currentUser.(*models.User)
+				currentUserID = user.ID
+				currentUserName = user.Name
+			}
 
-			r = r.WithContext(context.WithValue(r.Context(), authboss.CTXKeyData, data))
+			data := authboss.HTMLData{
+				"loggedin":          currentUser != nil,
+				"current_user_id":   currentUserID,
+				"current_user_name": currentUserName,
+				//"csrf_token":        nosurf.Token(*r),
+				"flash_success": authboss.FlashSuccess(w, r),
+				"flash_error":   authboss.FlashError(w, r),
+			}
+
+			newCtx := context.WithValue(r.Context(), ctxKeyCurrentUser, user)
+			newCtx = context.WithValue(newCtx, authboss.CTXKeyData, data)
+
+			r = r.WithContext(newCtx)
 			next.ServeHTTP(ww, r)
 		}
 		return http.HandlerFunc(h)
-	}
-}
-
-func layoutData(w http.ResponseWriter, r **http.Request, ab *authboss.Authboss) authboss.HTMLData {
-	var (
-		currentUserID   int64
-		currentUserName string
-	)
-
-	userInter, err := ab.LoadCurrentUser(r)
-
-	if userInter != nil && err == nil {
-		user := userInter.(*models.User)
-		currentUserName = user.Name
-		currentUserID = user.ID
-	}
-
-	return authboss.HTMLData{
-		"loggedin":          userInter != nil,
-		"current_user_id":   currentUserID,
-		"current_user_name": currentUserName,
-		//"csrf_token":        nosurf.Token(*r),
-		"flash_success": authboss.FlashSuccess(w, *r),
-		"flash_error":   authboss.FlashError(w, *r),
 	}
 }

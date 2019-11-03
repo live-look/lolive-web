@@ -13,8 +13,8 @@ var (
 
 // GetDb return database connection link
 func GetDb(ctx context.Context) (*sqlx.DB, bool) {
-	l, ok := ctx.Value(ctxKeyDb).(*sqlx.DB)
-	return l, ok
+	db, ok := ctx.Value(ctxKeyDb).(*sqlx.DB)
+	return db, ok
 }
 
 // NewDb creates new db connection link

@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	ctxKeyCurrentUser = contextKey("Authboss")
+	ctxKeyAuthBoss = contextKey("Authboss")
 )
 
 // GetAuthBoss returns Authboss object from context
 func GetAuthBoss(ctx context.Context) (*authboss.Authboss, bool) {
-	u, ok := ctx.Value(ctxKeyCurrentUser).(*authboss.Authboss)
+	u, ok := ctx.Value(ctxKeyAuthBoss).(*authboss.Authboss)
 
 	return u, ok
 }
@@ -24,7 +24,7 @@ func AuthBoss(ab *authboss.Authboss) func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
-			r = r.WithContext(context.WithValue(r.Context(), ctxKeyCurrentUser, ab))
+			r = r.WithContext(context.WithValue(r.Context(), ctxKeyAuthBoss, ab))
 			next.ServeHTTP(ww, r)
 		}
 		return http.HandlerFunc(h)

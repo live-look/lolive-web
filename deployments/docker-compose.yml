@@ -3,13 +3,13 @@ version: '3'
 services:
   camforchat-app:
     build:
-      context: ./../build/development
+      context: ./..
     image: isqad88/camforchat_app:latest
     user: $UID:$GID
     env_file:
       - ./../configs/.env.development
     environment:
-      - VIRTUAL_HOST=camforchat.$DOCKER_TLD
+      - VIRTUAL_HOST=www.camforchat.$DOCKER_TLD
       - VIRTUAL_PATH=/
       - VIRTUAL_PORT=3001
     expose:

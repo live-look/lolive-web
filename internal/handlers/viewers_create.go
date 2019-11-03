@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/go-chi/chi"
-	"github.com/volatiletech/authboss"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
@@ -24,14 +23,6 @@ func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataIntf := r.Context().Value(authboss.CTXKeyData)
-	if dataIntf == nil {
-		http.Error(w, http.StatusText(401), 401)
-		return
-	}
-
-	data := dataIntf.(authboss.HTMLData)
-
 	db, _ := appMiddleware.GetDb(r.Context())
 	broadcast, err := models.FindBroadcast(db, broadcastID)
 	if err != nil {
@@ -39,7 +30,9 @@ func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	viewer := models.NewViewer(db, data["current_user_id"].(int64), broadcast.ID)
+	user, _ := appMiddleware.GetCurrentUser(r.Context())
+
+	viewer := models.NewViewer(db, user.ID, broadcast.ID)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(viewer); err != nil {
 		logger.Error("decoding request body failed", zap.Error(err))

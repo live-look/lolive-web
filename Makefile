@@ -2,6 +2,15 @@
 
 all: build
 
+up:
+	scripts/development/up.sh
+
+down:
+	scripts/development/down.sh
+
+migrate:
+	scripts/development/migrate.sh
+
 build:
 	scripts/development/build.sh
 
