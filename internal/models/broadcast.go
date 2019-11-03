@@ -48,19 +48,6 @@ func NewBroadcast(db *sqlx.DB, userID int64) *Broadcast {
 	return &Broadcast{db: db, UserID: userID, SDPChan: make(chan string), Publish: make(chan *Viewer), viewers: make(map[int64]*Viewer), State: BroadcastStateOffline}
 }
 
-// CreateBroadcast saves broadcast into the database
-func CreateBroadcast(db *sqlx.DB, user *User) (*Broadcast, error) {
-	broadcast := NewBroadcast(db, user.ID)
-	broadcast.UserName = user.Name
-	broadcast.CreatedAt = time.Now()
-
-	insertQuery := `INSERT INTO broadcasts (user_id, state, created_at) VALUES ($1, $2, NOW()) RETURNING id`
-	if err := db.Get(&broadcast.ID, insertQuery, user.ID, broadcast.State); err != nil {
-		return nil, err
-	}
-	return broadcast, nil
-}
-
 // FindBroadcast gets broadcast from db by ID
 func FindBroadcast(db *sqlx.DB, ID int64) (*Broadcast, error) {
 	broadcast := NewBroadcast(db, 0)
@@ -84,6 +71,18 @@ func GetBroadcastsByState(db *sqlx.DB, state BroadcastState) ([]*Broadcast, erro
 	err := db.Select(&broadcasts, selectQuery, state)
 
 	return broadcasts, err
+}
+
+// Save saves broadcast into the database
+func (b *Broadcast) Save(broadcastUser *User) error {
+	b.UserName = broadcastUser.Name
+	b.CreatedAt = time.Now()
+
+	insertQuery := `INSERT INTO broadcasts (user_id, state, created_at) VALUES ($1, $2, NOW()) RETURNING id`
+	if err := broadcast.db.Get(&b.ID, insertQuery, broadcastUser.ID, b.State); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SetState changes state of broadcast
