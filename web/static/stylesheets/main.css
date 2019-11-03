@@ -1,0 +1,21 @@
+#video {
+  background-color: #000;
+}
+
+.broadcasting-card {
+  width: 322px;
+}
+
+.js-alert-danger {
+  display: none;
+}
+
+.ab-forms {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.ab-forms .row {
+  margin-left: 0;
+  margin-right: 0;
+}

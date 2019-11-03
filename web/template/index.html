@@ -1,0 +1,49 @@
+{{define "navigation"}}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand">Camforchat</a>
+  <ul class="navbar-nav">
+    {{if .UserData.loggedin}}
+    <li class="nav-item">
+      <a class="nav-link" href="/broadcasts/new">Broadcast yourself</a>
+    </li>
+    {{end}}
+  </ul>
+  <ul class="navbar-nav ml-md-auto">
+    {{if not .UserData.loggedin}}
+    <li class="nav-item">
+      <a class="nav-link" href="/auth/register" rel="noopener">Register</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/auth/login" rel="noopener">Login</a>
+    </li>
+    {{else}}
+    <li class="nav-item">
+      <p>{{.UserData.current_user_name}}</p>
+    </li>
+    {{end}}
+  </ul>
+</nav>
+{{end}}
+
+
+{{define "body"}}
+<div class="container">
+  <div class="row">
+    {{range .Broadcasts}}
+    <div class="col-sm-3">
+      <div class="card sm-3 shadow-sm">
+        <svg class="bd-placeholder-img card-img-top" width="100%" height="225" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" role="img" aria-label="Placeholder: Thumbnail"><title>Placeholder</title><rect width="100%" height="100%" fill="#55595c"></rect><text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text></svg>
+        <div class="card-body">
+          <p class="card-text">
+            <a href="/broadcasts/{{.ID}}">{{.UserName}}' room</a>
+          </p>
+        </div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+
+{{define "javascripts"}}
+{{end}}

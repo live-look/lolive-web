@@ -1,0 +1,98 @@
+version: '3'
+
+services:
+  camforchat-app:
+    build:
+      context: ./../build/development
+    image: isqad88/camforchat_app:latest
+    user: $UID:$GID
+    env_file:
+      - ./../configs/.env.development
+    environment:
+      - VIRTUAL_HOST=camforchat.$DOCKER_TLD
+      - VIRTUAL_PATH=/
+      - VIRTUAL_PORT=3001
+    expose:
+      - "3001"
+    networks:
+      - backend
+      - default
+      - frontend
+    volumes:
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+    depends_on:
+      - camforchat-pgbouncer
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+
+  # Database
+  camforchat-db:
+    image: postgres:alpine
+    env_file:
+      - ./../configs/.env.development
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ~/.pgpass:/root/.pgpass
+    expose:
+      - "5432"
+    networks:
+      - default
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+  # pgbouncer
+  camforchat-pgbouncer:
+    image: edoburu/pgbouncer
+    env_file:
+      - ./../configs/.env.pgbouncer.development
+    expose:
+      - "5432"
+    networks:
+      - default
+      - backend
+    depends_on:
+      - camforchat-db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+
+  # Migrations
+  camforchat-sqitch:
+    image: isqad88/sqitch:0.2.0
+    user: $UID:$GID
+    env_file:
+      - ./../configs/.env.development
+    volumes:
+      - ./../db/src:/src
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+    depends_on:
+      - camforchat-pgbouncer
+    networks:
+      - backend
+
+networks:
+  frontend:
+    external:
+      name: frontend
+
+  backend:
+    external:
+      name: backend
+
+volumes:
+  pg_data:
+    driver: local
