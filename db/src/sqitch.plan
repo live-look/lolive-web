@@ -1,0 +1,8 @@
+%syntax-version=1.0.0
+%project=camforchat
+%uri=https://github.com/sqitchers/sqitch-intro/
+
+create_users 2019-08-01T10:46:27Z root <root@52497dcb604b> # Creates users
+add_confirm_fields 2019-10-05T13:48:45Z root <root@5cbd7e2d2366> # Adds confirm fields to users
+create_broadcasts 2019-10-09T07:07:55Z root <root@f7b8008282f1> # Adds table for broadcasts logging
+messages 2019-11-02T15:43:25Z Andrew <isqad88@gmail.com> # Adds messages relation
