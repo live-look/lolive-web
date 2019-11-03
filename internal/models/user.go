@@ -165,6 +165,19 @@ func (s Storer) Load(ctx context.Context, key string) (authboss.User, error) {
 	return u, nil
 }
 
+// FindByID finds user by ID
+func (s Storer) FindByID(id int64) (*User, error) {
+	u := &User{}
+
+	findStatement := `SELECT * FROM users WHERE id = $1`
+	err := s.Db.Get(u, findStatement, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 // Create saves user into database
 func (s Storer) Create(ctx context.Context, user authboss.User) error {
 	usr := user.(*User)
