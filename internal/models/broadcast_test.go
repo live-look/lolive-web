@@ -1,46 +1,42 @@
 package models
 
 import (
-	"database/sql"
-	"fmt"
-	txdb "github.com/DATA-DOG/go-txdb"
-	"github.com/romanyx/polluter"
-	"os"
+	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
-
-	_ "github.com/lib/pq"
 )
 
-func prepareBroadcastTestDb(t *testing.T) (db *sql.DB, closeConn func() error) {
-	dbSpec := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		os.Getenv("CAMFORCHAT_APP_POSTGRES_USER"),
-		os.Getenv("CAMFORCHAT_APP_POSTGRES_PASSWORD"),
-		os.Getenv("CAMFORCHAT_APP_POSTGRES_HOST"),
-		"camforchat")
+func TestCreateBroadcast(t *testing.T) {
+	ctx := setupTestContext(t)
+	defer ctx.db.Close()
 
-	txdb.Register("psql_txdb", "postgres", dbSpec)
+	user := userFixture(t, ctx, "broadcast_creating@camforchat-test.net")
+	broadcast, err := CreateBroadcast(ctx.db, user)
+	assert.Nil(t, err)
 
-	cName := fmt.Sprintf("connection_%d", time.Now().UnixNano())
+	assert.Equal(t, BroadcastStateOffline, broadcast.State)
+	assert.Equal(t, user.ID, broadcast.UserID)
+	assert.Equal(t, user.Name, broadcast.UserName)
+	assert.NotEqual(t, 0, broadcast.ID)
 
-	db, err := sql.Open("psql_txdb", cName)
-	if err != nil {
-		t.Fatalf("open psql_txdb connection: %s", err)
-	}
-
-	seed, err := os.Open("../fixtures/users.yml")
-	if err != nil {
-		t.Fatalf("failed to open seed file: %s", err)
-	}
-	defer seed.Close()
-
-	p := polluter.New(polluter.PostgresEngine(db))
-	if err := p.Pollute(seed); err != nil {
-		t.Fatalf("failed to pollute: %s", err)
-	}
-
-	return db, db.Close
+	assert.NotNil(t, broadcast.Publish)
+	assert.NotNil(t, broadcast.SDPChan)
 }
 
-func TestCreate(t *testing.T) {
+func TestFindBroadcast(t *testing.T) {
+	ctx := setupTestContext(t)
+	defer ctx.db.Close()
+
+	user := userFixture(t, ctx, "broadcast_finding@camforchat-test.net")
+	broadcast := broadcastFixture(t, ctx, user)
+
+	b, err := FindBroadcast(ctx.db, broadcast.ID)
+	assert.Nil(t, err)
+
+	assert.Equal(t, user.ID, b.UserID)
+	assert.Equal(t, user.Name, b.UserName)
+	assert.Equal(t, broadcast.State, b.State)
+	assert.Equal(t, broadcast.ID, b.ID)
+
+	assert.NotNil(t, broadcast.Publish)
+	assert.NotNil(t, broadcast.SDPChan)
 }

@@ -40,7 +40,7 @@ type Broadcast struct {
 
 	viewers map[int64]*Viewer
 
-	Publish chan *Viewer
+	Publish chan *Viewer `json:"-" db:"-"`
 }
 
 // NewBroadcast creates new instance of models.broadcast
@@ -48,10 +48,28 @@ func NewBroadcast(db *sqlx.DB, userID int64) *Broadcast {
 	return &Broadcast{db: db, UserID: userID, SDPChan: make(chan string), Publish: make(chan *Viewer), viewers: make(map[int64]*Viewer), State: BroadcastStateOffline}
 }
 
+// CreateBroadcast saves broadcast into the database
+func CreateBroadcast(db *sqlx.DB, user *User) (*Broadcast, error) {
+	broadcast := NewBroadcast(db, user.ID)
+	broadcast.UserName = user.Name
+	broadcast.CreatedAt = time.Now()
+
+	insertQuery := `INSERT INTO broadcasts (user_id, state, created_at) VALUES ($1, $2, NOW()) RETURNING id`
+	if err := db.Get(&broadcast.ID, insertQuery, user.ID, broadcast.State); err != nil {
+		return nil, err
+	}
+	return broadcast, nil
+}
+
 // FindBroadcast gets broadcast from db by ID
 func FindBroadcast(db *sqlx.DB, ID int64) (*Broadcast, error) {
-	var broadcast *Broadcast
-	selectQuery := `SELECT b.*, u.name AS user_name FROM broadcasts b INNER JOIN users u ON u.id = b.user_id WHERE id = $1`
+	broadcast := NewBroadcast(db, 0)
+
+	selectQuery := `SELECT b.*, u.name AS user_name
+					FROM broadcasts b
+					INNER JOIN users u
+					  ON u.id = b.user_id
+					WHERE b.id = $1`
 
 	err := db.Get(broadcast, selectQuery, ID)
 
@@ -66,12 +84,6 @@ func GetBroadcastsByState(db *sqlx.DB, state BroadcastState) ([]*Broadcast, erro
 	err := db.Select(&broadcasts, selectQuery, state)
 
 	return broadcasts, err
-}
-
-// Create saves broadcast into the database
-func (b *Broadcast) Create() error {
-	insertQuery := `INSERT INTO broadcasts (user_id, state, created_at) VALUES ($1, $2, NOW()) RETURNING id`
-	return b.db.Get(&b.ID, insertQuery, b.UserID, b.State)
 }
 
 // SetState changes state of broadcast
