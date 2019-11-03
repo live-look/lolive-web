@@ -79,7 +79,7 @@ func (b *Broadcast) Save(broadcastUser *User) error {
 	b.CreatedAt = time.Now()
 
 	insertQuery := `INSERT INTO broadcasts (user_id, state, created_at) VALUES ($1, $2, NOW()) RETURNING id`
-	if err := broadcast.db.Get(&b.ID, insertQuery, broadcastUser.ID, b.State); err != nil {
+	if err := b.db.Get(&b.ID, insertQuery, broadcastUser.ID, b.State); err != nil {
 		return err
 	}
 	return nil
