@@ -93,7 +93,7 @@ func main() {
 
 	r.Route("/broadcasts", func(r chi.Router) {
 		// Require auth
-		r.Use(authboss.Middleware2(ab, authboss.RequireNone, authboss.RespondRedirect), confirm.Middleware(ab))
+		r.Use(ab.LoadClientStateMiddleware, authboss.Middleware2(ab, authboss.RequireNone, authboss.RespondRedirect), confirm.Middleware(ab))
 
 		r.Get("/new", handlers.BroadcastsNew)
 		r.With(broadcastHanderMiddleware).
