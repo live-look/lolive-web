@@ -13,22 +13,18 @@
   }
 
   function _onWindowLoad() {
-    var promise = new Promise((resolve, reject) => {
-      setTimeout(function() {
-        resolve();
-      }, 1000);
-    });
+    var deferred = $.Deferred().resolve();
 
-    promise.
-      then(() => _loadMainModules('load')).
-      catch((e) => console.error(e));
+    deferred.always(_loadMainModules.bind(null, 'load'));
+
+    setTimeout(function() {
+      deferred.resolve();
+    }, 1000);
   }
 
   function _listener() {
-    document.addEventListener('DOMContentLoaded', function(event) {
-      _loadMainModules('ready');
-    });
-    window.addEventListener('load', _onWindowLoad);
+    $(document).ready(_loadMainModules.bind(null, 'ready'));
+    $(window).on('load', _onWindowLoad);
   }
 
   app.modules && _listener();
