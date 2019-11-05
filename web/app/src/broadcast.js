@@ -19,6 +19,9 @@ app.modules.broadcast = (function(self) {
         return
       }
 
+      console.log("Local session description: ");
+      console.log(btoa(JSON.stringify(peerConnection.localDescription)));
+
       _enableButton();
     }
   }
@@ -32,33 +35,32 @@ app.modules.broadcast = (function(self) {
         peerConnection.setLocalDescription(description);
       }).catch(console.error);
     }).catch(function(message) {
-      var alertDangerEl = document.getElementsByClassName('js-alert-danger')[0];
+      var $alertDanger = $('.js-alert-danger');
 
-      if (alertDangerEl) {
-        alertDangerEl.innerText = 'Sorry, but you have no any webcam. Plug device and try to reload page.';
-        alertDangerEl.style.display = 'block';
-      }
+      $alertDanger.text('Sorry, but you have no any webcam. Plug device and try to reload page.').show();
 
       console.error(message);
     });
   }
 
   function _startSession() {
-    fetch('/broadcasts', {
+    $.ajax({
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      body: JSON.stringify({local_sdp: btoa(JSON.stringify(peerConnection.localDescription))})
-    }).
-      then(response => response.json()).
-      then(result => {
+      url: '/broadcasts',
+      data: JSON.stringify({local_sdp: btoa(JSON.stringify(peerConnection.localDescription))}),
+      contentType: 'application/json',
+      dataType: 'json',
+      success: function(data) {
+        console.log('Success');
+        console.log(data);
+
         try {
-          peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(result.remote_sdp))))
+          peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(data.remote_sdp))))
         } catch (e) {
           console.error(e);
         }
-      });
+      }
+    });
   }
 
   function _stopSession() {
@@ -66,32 +68,26 @@ app.modules.broadcast = (function(self) {
   }
 
   function _enableButton() {
-    var btn = document.getElementsByClassName('js-switch-broadcast')[0]
+    $(document).on('click', '.js-switch-broadcast', function(event) {
+      var $this = $(this);
 
-    btn.addEventListener('click', (event) => {
       if (broadcastingEnabled) {
-        btn.innerText = 'Start broadcasting';
-        btn.classList.add('btn-outline-success');
-        btn.classList.remove('btn-outline-danger');
-
+        $this.text('Start broadcasting').addClass('btn-outline-success').removeClass('btn-outline-danger');
         broadcastingEnabled = false;
 
         _stopSession();
       } else {
-        btn.innerText = 'Stop broadcasting';
-        btn.classList.add('btn-outline-danger');
-        btn.classList.remove('btn-outline-success');
+        $this.text('Stop broadcasting').addClass('btn-outline-danger').removeClass('btn-outline-success');
         broadcastingEnabled = true;
 
         _startSession();
       }
     });
 
-    btn.removeAttribute('disabled');
+    $('.js-switch-broadcast').prop('disabled', false);
   }
 
-  self.ready = function() {
-    console.log('ready');
+  self.load = function() {
     _createSession();
     _setupWebcam();
   };
