@@ -97,7 +97,7 @@ func main() {
 		r.Get("/new", handlers.BroadcastsNew)
 		r.With(broadcastHanderMiddleware).
 			Post("/", handlers.BroadcastsCreate)
-		r.Get("/{broadcastId}", handlers.BroadcastsShow)
+		r.Get("/{broadcastID}", handlers.BroadcastsShow)
 
 		r.With(broadcastHanderMiddleware).
 			Post("/{broadcastID}/viewers", handlers.ViewersCreate)
