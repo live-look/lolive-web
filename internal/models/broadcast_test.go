@@ -10,7 +10,7 @@ func TestCreateBroadcast(t *testing.T) {
 	defer ctx.db.Close()
 
 	user := userFixture(t, ctx, "broadcast_creating@camforchat-test.net")
-	broadcast := NewBroadcast(ctx.db, user.ID)
+	broadcast := NewBroadcast(ctx.db, ctx.webrtc, user.ID)
 
 	err := broadcast.Save(user)
 	assert.Nil(t, err)
@@ -31,7 +31,7 @@ func TestFindBroadcast(t *testing.T) {
 	user := userFixture(t, ctx, "broadcast_finding@camforchat-test.net")
 	broadcast := broadcastFixture(t, ctx, user)
 
-	b, err := FindBroadcast(ctx.db, broadcast.ID)
+	b, err := FindBroadcast(ctx.db, ctx.webrtc, broadcast.ID)
 	assert.Nil(t, err)
 
 	assert.Equal(t, user.ID, b.UserID)

@@ -1,8 +1,10 @@
 package models
 
 import (
+	"camforchat/internal/usecases"
 	"github.com/jmoiron/sqlx"
 	"github.com/pion/webrtc/v2"
+	"log"
 	"time"
 )
 
@@ -31,11 +33,19 @@ type Viewer struct {
 	SDPChan chan string `json:"-" db:"-"`
 
 	db *sqlx.DB
+
+	webrtc *Webrtc
 }
 
 // NewViewer creates new Viewer object with db conn, userID and broadcastID
-func NewViewer(db *sqlx.DB, userID int64, broadcastID int64) *Viewer {
-	return &Viewer{db: db, UserID: userID, BroadcastID: broadcastID, State: ViewerStateJoined}
+func NewViewer(db *sqlx.DB, webrtc *Webrtc, userID int64, broadcastID int64) *Viewer {
+	return &Viewer{
+		db:          db,
+		UserID:      userID,
+		BroadcastID: broadcastID,
+		State:       ViewerStateJoined,
+		webrtc:      webrtc,
+	}
 }
 
 // Create saves to db
@@ -47,7 +57,46 @@ func (v *Viewer) Create() error {
 
 // Run creates and runs main loop of viewer of broadcast
 func (v *Viewer) Run(track *webrtc.Track) {
-	go func(v *Viewer) {
-		// recvOnlyOffer := webrtc.SessionDescription{}
-	}(v)
+	go func(viewer *Viewer, track *webrtc.Track) {
+		peerConnection, err := v.webrtc.NewPeerConnection()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if _, err = peerConnection.AddTrack(track); err != nil {
+			log.Println(err)
+			return
+		}
+
+		offer := webrtc.SessionDescription{}
+		usecases.DecodeSDP(viewer.LocalSessionDescription, &offer)
+
+		// Set the remote SessionDescription
+		err = peerConnection.SetRemoteDescription(offer)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// Create answer
+		answer, err := peerConnection.CreateAnswer(nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// Sets the LocalDescription, and starts our UDP listeners
+		err = peerConnection.SetLocalDescription(answer)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		viewer.SDPChan <- usecases.EncodeSDP(answer)
+
+		log.Println("Loop of viewer...")
+
+		select {}
+	}(v, track)
 }

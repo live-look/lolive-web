@@ -79,6 +79,9 @@ func main() {
 
 	broadcastHanderMiddleware := appMiddleware.BroadcastHandler(broadcastHandler)
 
+	wrtc := models.NewWebrtc()
+	webrtcMiddleware := appMiddleware.WebrtcAPI(wrtc)
+
 	// Web server, routing
 	r := chi.NewRouter()
 	r.Use(
@@ -88,6 +91,7 @@ func main() {
 		ab.LoadClientStateMiddleware,
 		appMiddleware.CurrentUserDataInject(ab),
 		middleware.Recoverer,
+		webrtcMiddleware,
 	)
 
 	r.Route("/broadcasts", func(r chi.Router) {

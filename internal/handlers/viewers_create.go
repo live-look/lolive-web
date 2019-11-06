@@ -24,7 +24,8 @@ func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db, _ := appMiddleware.GetDb(r.Context())
-	broadcast, err := models.FindBroadcast(db, broadcastID)
+	webrtc, _ := appMiddleware.GetWebrtcAPI(r.Context())
+	broadcast, err := models.FindBroadcast(db, webrtc, broadcastID)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
@@ -32,7 +33,7 @@ func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := appMiddleware.GetCurrentUser(r.Context())
 
-	viewer := models.NewViewer(db, user.ID, broadcast.ID)
+	viewer := models.NewViewer(db, webrtc, user.ID, broadcast.ID)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(viewer); err != nil {
 		logger.Error("decoding request body failed", zap.Error(err))

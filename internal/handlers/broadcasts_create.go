@@ -14,8 +14,9 @@ func BroadcastsCreate(w http.ResponseWriter, r *http.Request) {
 	db, _ := appMiddleware.GetDb(r.Context())
 	logger, _ := appMiddleware.GetLog(r.Context())
 	user, _ := appMiddleware.GetCurrentUser(r.Context())
+	webrtc, _ := appMiddleware.GetWebrtcAPI(r.Context())
 
-	broadcast := models.NewBroadcast(db, user.ID)
+	broadcast := models.NewBroadcast(db, webrtc, user.ID)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(broadcast); err != nil {
 		logger.Error("decoding request body failed", zap.Error(err))
