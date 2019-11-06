@@ -12,7 +12,7 @@ func TestViewerCreate(t *testing.T) {
 	user := userFixture(t, ctx, "viewer_creating@camforchat-test.net")
 	broadcast := broadcastFixture(t, ctx, user)
 
-	v := NewViewer(ctx.db, user.ID, broadcast.ID)
+	v := NewViewer(ctx.db, ctx.webrtc, user.ID, broadcast.ID)
 	err := v.Create()
 	assert.Nil(t, err)
 }

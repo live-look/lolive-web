@@ -41,16 +41,26 @@ type Broadcast struct {
 	viewers map[int64]*Viewer
 
 	Publish chan *Viewer `json:"-" db:"-"`
+
+	webrtc *Webrtc
 }
 
 // NewBroadcast creates new instance of models.broadcast
-func NewBroadcast(db *sqlx.DB, userID int64) *Broadcast {
-	return &Broadcast{db: db, UserID: userID, SDPChan: make(chan string), Publish: make(chan *Viewer), viewers: make(map[int64]*Viewer), State: BroadcastStateOffline}
+func NewBroadcast(db *sqlx.DB, webrtc *Webrtc, userID int64) *Broadcast {
+	return &Broadcast{
+		db:      db,
+		UserID:  userID,
+		SDPChan: make(chan string),
+		Publish: make(chan *Viewer),
+		viewers: make(map[int64]*Viewer),
+		State:   BroadcastStateOffline,
+		webrtc:  webrtc,
+	}
 }
 
 // FindBroadcast gets broadcast from db by ID
-func FindBroadcast(db *sqlx.DB, ID int64) (*Broadcast, error) {
-	broadcast := NewBroadcast(db, 0)
+func FindBroadcast(db *sqlx.DB, webrtc *Webrtc, ID int64) (*Broadcast, error) {
+	broadcast := NewBroadcast(db, webrtc, 0)
 
 	selectQuery := `SELECT b.*, u.name AS user_name
 					FROM broadcasts b
@@ -107,17 +117,7 @@ func (b *Broadcast) Run() {
 	go func(broadcast *Broadcast) {
 		log.Println("Start broadcasting...")
 
-		m := webrtc.MediaEngine{}
-		m.RegisterCodec(webrtc.NewRTPVP8Codec(webrtc.DefaultPayloadTypeVP8, 90000))
-		api := webrtc.NewAPI(webrtc.WithMediaEngine(m))
-		config := webrtc.Configuration{
-			ICEServers: []webrtc.ICEServer{
-				{
-					URLs: []string{"stun:stun.l.google.com:19302"},
-				},
-			},
-		}
-		peerConnection, err := api.NewPeerConnection(config)
+		peerConnection, err := broadcast.webrtc.NewPeerConnection()
 		if err != nil {
 			log.Println(err)
 			return
@@ -221,12 +221,13 @@ func (b *Broadcast) Run() {
 					log.Printf("Error: %v", err)
 					break
 				}
-
 			}
 		})
 
 		broadcast.SDPChan <- usecases.EncodeSDP(answer)
 		localTrack := <-localTrackChan
+		log.Println("broadcast loop")
+
 		for {
 			select {
 			case viewer := <-b.Publish:

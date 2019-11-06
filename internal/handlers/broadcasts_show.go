@@ -32,7 +32,8 @@ func BroadcastsShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db, _ := appMiddleware.GetDb(r.Context())
-	broadcast, err := models.FindBroadcast(db, broadcastID)
+	webrtc, _ := appMiddleware.GetWebrtcAPI(r.Context())
+	broadcast, err := models.FindBroadcast(db, webrtc, broadcastID)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return

@@ -24,7 +24,9 @@ func setupTestContext(t *testing.T) *testContext {
 	err = db.Ping()
 	assert.Nil(t, err)
 
-	return newTestContext(context.Background(), db)
+	webrtc := NewWebrtc()
+
+	return newTestContext(context.Background(), db, webrtc)
 }
 
 func userFixture(t *testing.T, ctx *testContext, email string) *User {
@@ -40,7 +42,7 @@ func userFixture(t *testing.T, ctx *testContext, email string) *User {
 }
 
 func broadcastFixture(t *testing.T, ctx *testContext, user *User) *Broadcast {
-	broadcast := NewBroadcast(ctx.db, user.ID)
+	broadcast := NewBroadcast(ctx.db, ctx.webrtc, user.ID)
 	err := broadcast.Save(user)
 	assert.Nil(t, err)
 
