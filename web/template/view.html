@@ -39,7 +39,7 @@
       <div class="card broadcasting-card">
         <video id="video" width="320" height="240" autoplay></video>
         <div class="card-body">
-          <h5></h5>
+          <h5>{{ .CurrentBroadcast.UserName}}'s room</h5>
         </div>
       </div>
     </div>
@@ -48,5 +48,8 @@
 {{end}}
 
 {{define "javascripts"}}
-<script type="application/javascript" src="/assets/javascripts/broadcast.js"></script>
+<script type="application/javascript">
+  app.config.viewer = {currentBroadcastId: {{ .CurrentBroadcast.ID}} };
+</script>
+<script type="application/javascript" src="/assets/javascripts/viewer.js"></script>
 {{end}}

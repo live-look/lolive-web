@@ -7,6 +7,7 @@ import (
 
 // PageData is struct for passing data to views
 type PageData struct {
-	UserData   authboss.HTMLData
-	Broadcasts []*models.Broadcast
+	UserData         authboss.HTMLData
+	Broadcasts       []*models.Broadcast
+	CurrentBroadcast *models.Broadcast
 }
