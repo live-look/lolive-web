@@ -48,6 +48,7 @@ func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	broadcastHandler, _ := appMiddleware.GetBroadcastHandler(r.Context())
+	logger.Info("start viewer")
 	broadcastHandler.StartView(viewer)
 
 	remoteSdp := <-viewer.SDPChan
