@@ -17,7 +17,6 @@ ENTRYPOINT ["tini", "--"]
 
 WORKDIR /app
 COPY --from=compile /app/web/template /app/templates
-COPY --from=compile /app/web/static /app/static
 COPY --from=compile /app/server /app/
 
 EXPOSE 3001

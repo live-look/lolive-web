@@ -9,7 +9,6 @@ import (
 
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/volatiletech/authboss"
 	"github.com/volatiletech/authboss/confirm"
@@ -111,20 +110,6 @@ func main() {
 
 	r.Handle("/metrics", promhttp.Handler())
 	r.Get("/", handlers.HomePage)
-
-	// Server static files
-	workDir, _ := os.Getwd()
-	filesDir := filepath.Join(workDir, "static")
-	path := "/static"
-	fs := http.StripPrefix(path, http.FileServer(http.Dir(filesDir)))
-	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
-		path += "/"
-	}
-	path += "*"
-	r.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fs.ServeHTTP(w, r)
-	}))
 
 	valv := valve.New()
 	baseCtx := valv.Context()
