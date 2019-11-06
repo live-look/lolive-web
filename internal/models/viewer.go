@@ -45,6 +45,7 @@ func NewViewer(db *sqlx.DB, webrtc *Webrtc, userID int64, broadcastID int64) *Vi
 		BroadcastID: broadcastID,
 		State:       ViewerStateJoined,
 		webrtc:      webrtc,
+		SDPChan:     make(chan string),
 	}
 }
 
@@ -93,6 +94,7 @@ func (v *Viewer) Run(track *webrtc.Track) {
 			return
 		}
 
+		log.Println("send SDP")
 		viewer.SDPChan <- usecases.EncodeSDP(answer)
 
 		log.Println("Loop of viewer...")

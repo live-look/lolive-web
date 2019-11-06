@@ -20,6 +20,7 @@ func NewBroadcastHandler() *BroadcastHandler {
 	return &BroadcastHandler{
 		broadcasts: make(map[int64]*Broadcast),
 		Publish:    make(chan *Broadcast),
+		Subscribe:  make(chan *Viewer),
 	}
 }
 
@@ -34,6 +35,7 @@ func (bh *BroadcastHandler) Run(ctx context.Context) {
 				bh.broadcasts[broadcast.ID] = broadcast
 
 				broadcast.Run()
+				log.Println("broadcast runned")
 			case viewer := <-bh.Subscribe:
 				log.Println("Found broadcast")
 

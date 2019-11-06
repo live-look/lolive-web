@@ -226,7 +226,6 @@ func (b *Broadcast) Run() {
 
 		broadcast.SDPChan <- usecases.EncodeSDP(answer)
 		localTrack := <-localTrackChan
-		log.Println("broadcast loop")
 
 		for {
 			select {
