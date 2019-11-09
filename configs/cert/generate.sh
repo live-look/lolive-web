@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
-org=www.camforchat.docker-ca
-domain=www.camforchat.docker
+org=static.camforchat.docker-ca
+domain=static.camforchat.docker
 
 sudo trust anchor --remove ca.crt || true
 

@@ -51,5 +51,5 @@
 <script type="application/javascript">
   app.config.viewer = {currentBroadcastId: {{ .CurrentBroadcast.ID}} };
 </script>
-<script type="application/javascript" src="/assets/javascripts/viewer.js"></script>
+  <script type="application/javascript" src="{{ assetUrl "/assets/javascripts/viewer.js" }}"></script>
 {{end}}

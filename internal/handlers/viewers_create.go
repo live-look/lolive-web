@@ -13,6 +13,7 @@ import (
 
 // ViewersCreate handles POST /broadcasts/{broadcastID}/viewers
 // creates new Viewer and runs it
+// TODO: extract API
 func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 	logger, _ := appMiddleware.GetLog(r.Context())
 

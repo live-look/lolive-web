@@ -88,8 +88,8 @@ services:
   camforchat-assets:
     image: nginx
     environment:
-      - VIRTUAL_HOST=www.camforchat.$DOCKER_TLD
-      - VIRTUAL_PATH=/assets
+      - VIRTUAL_HOST=static.camforchat.$DOCKER_TLD
+      - VIRTUAL_PATH=/
       - VIRTUAL_PORT=3002
     expose:
       - "3002"
