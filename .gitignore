@@ -3,3 +3,4 @@
 /pkg
 src/app/static/*.ivf
 /camforchat
+.DS_Store

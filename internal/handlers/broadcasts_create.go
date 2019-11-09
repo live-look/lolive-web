@@ -10,6 +10,7 @@ import (
 )
 
 // BroadcastsCreate handles creating broadcast
+// TODO: extract into API
 func BroadcastsCreate(w http.ResponseWriter, r *http.Request) {
 	db, _ := appMiddleware.GetDb(r.Context())
 	logger, _ := appMiddleware.GetLog(r.Context())

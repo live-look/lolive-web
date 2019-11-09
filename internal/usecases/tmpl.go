@@ -23,10 +23,12 @@ func Tmpl(layout string, partial string) (*template.Template, error) {
 		return nil, errors.New("is directory")
 	}
 
-	tmpl, err := template.ParseFiles(lp, fp)
-	if err != nil {
-		return nil, err
-	}
+	tmpl := template.New(layout)
+	tmpl = tmpl.Funcs(template.FuncMap{"assetUrl": assetUrl})
 
-	return tmpl, nil
+	return tmpl.ParseFiles(lp, fp)
+}
+
+func assetUrl(assetPath string) string {
+	return os.Getenv("STATIC_ROOT_URL") + assetPath
 }
