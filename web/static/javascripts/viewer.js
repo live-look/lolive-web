@@ -13,25 +13,30 @@ app.modules.viewer = (function(self) {
       console.log(peerConnection.iceConnectionState);
     }
 
+    // here we receive ICE candidates
     peerConnection.onicecandidate = function(event) {
-      if (event.candidate !== null) {
-        return
+      console.log(event);
+      if (event.candidate === null) {
+        console.log(peerConnection.localDescription);
+
+        _startSession();
       }
     }
 
-    peerConnection.addTransceiver('video', {'direction': 'recvonly'});
-    peerConnection.createOffer().
-      then(function(d) {
-        peerConnection.setLocalDescription(d);
-
-        _startSession();
-      }).
-      catch(function(e) { console.error(e); });
+    peerConnection.addTransceiver('video', {'direction': 'sendrecv'});
     peerConnection.ontrack = function(event) {
+      console.log("On track");
+      console.log(event);
+
       broadcastVideo.srcObject = event.streams[0];
       broadcastVideo.autoplay = true;
       broadcastVideo.controls = true;
     }
+
+    peerConnection.createOffer().then(function(d) {
+      peerConnection.setLocalDescription(d);
+    }).
+    catch(function(e) { console.error(e); });
   }
 
   function _startSession() {
@@ -44,6 +49,7 @@ app.modules.viewer = (function(self) {
     }).
       then(response => response.json()).
       then(result => {
+        console.log("set remote description");
         try {
           peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(result.remote_sdp))))
         } catch (e) {
@@ -57,6 +63,8 @@ app.modules.viewer = (function(self) {
   }
 
   self.ready = function() {
+    console.log("ready");
+
     _createSession();
   };
 
