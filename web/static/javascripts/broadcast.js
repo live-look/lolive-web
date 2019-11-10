@@ -15,16 +15,15 @@ app.modules.broadcast = (function(self) {
     }
 
     peerConnection.onicecandidate = function(event) {
-      if (event.candidate !== null) {
-        return
+      console.log(event);
+      if (event.candidate === null) {
+        _enableButton();
       }
-
-      _enableButton();
     }
   }
 
   function _setupWebcam() {
-    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(function(stream) {
+    navigator.mediaDevices.getUserMedia({video: true, audio: false}).then(function(stream) {
       yourSelfVideo.srcObject = stream;
 
       peerConnection.addStream(stream);
@@ -91,7 +90,6 @@ app.modules.broadcast = (function(self) {
   }
 
   self.ready = function() {
-    console.log('ready');
     _createSession();
     _setupWebcam();
   };
