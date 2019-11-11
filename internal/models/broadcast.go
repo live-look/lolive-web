@@ -2,11 +2,10 @@ package models
 
 import (
 	"camforchat/internal/usecases"
-	"fmt"
+	"context"
 	"github.com/jmoiron/sqlx"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v2"
-	"github.com/pion/webrtc/v2/pkg/media/ivfwriter"
 	"io"
 	"log"
 	"time"
@@ -33,16 +32,17 @@ type Broadcast struct {
 
 	UserName string `json:"user_name" db:"user_name"`
 
+	screenshotTaker *BroadcastScreenshot `json:"-" db:"-"`
+
 	LocalSessionDescription  string `json:"local_sdp" db:"-"`
 	RemoteSessionDescription string `json:"remote_sdp" db:"-"`
 
-	SDPChan chan string `json:"-" db:"-"`
+	SDPChan chan string  `json:"-" db:"-"`
+	Publish chan *Viewer `json:"-" db:"-"`
 
 	db *sqlx.DB
 
 	viewers map[int64]*Viewer
-
-	Publish chan *Viewer `json:"-" db:"-"`
 
 	webrtc *Webrtc
 }
@@ -116,6 +116,21 @@ func (b *Broadcast) Join(viewer *Viewer) {
 
 // Run starts broadcast loop
 func (b *Broadcast) Run() {
+	var err error
+	// Run screenshot taker loop
+	b.screenshotTaker, err = NewBroadcastScreenshot(b.ID)
+	if err != nil {
+		log.Println("Fail to run: ", err)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	b.screenshotTaker.TakeScreenshots(ctx)
+
+	// Run transmission loop
 	go func(broadcast *Broadcast) {
 		log.Println("Start broadcasting...")
 
@@ -188,51 +203,6 @@ func (b *Broadcast) Run() {
 
 			log.Println("On track")
 
-			// Periodically dump to disk for previews
-			/**
-			codec := track.Codec()
-			if codec.Name == webrtc.VP8 {
-				go func() {
-					var ivffile *ivfwriter.IVFWriter
-
-					tick := time.Tick(time.Minute * 1)
-
-					log.Println("Got VP8 track, saving to disk as output.ivf")
-
-					filename := fmt.Sprintf("/app/videos/tick-%d.ivf", time.Now().Unix())
-					ivffile, err := ivfwriter.New(filename)
-					if err != nil {
-						log.Println(err)
-						return
-					}
-
-					for {
-						select {
-						case t := <-tick:
-							log.Println("Rotate file...")
-							if err := ivffile.Close(); err != nil {
-								log.Println(err)
-								continue
-							}
-							filename := fmt.Sprintf("/app/videos/tick-%d.ivf", t.Unix())
-							ivffile, err = ivfwriter.New(filename)
-							if err != nil {
-								log.Println(err)
-							}
-						default:
-							rtpPacket, err := track.ReadRTP()
-							if err != nil {
-								log.Println(err)
-							}
-							if err := ivffile.WriteRTP(rtpPacket); err != nil {
-								log.Println(err)
-							}
-						}
-					}
-				}()
-			}
-			**/
-
 			localTrack, newTrackErr := peerConnection.NewTrack(track.PayloadType(), track.SSRC(), "video", "pion")
 			if newTrackErr != nil {
 				log.Printf("Error: %v", newTrackErr)
@@ -240,18 +210,24 @@ func (b *Broadcast) Run() {
 			}
 			localTrackChan <- localTrack
 
-			rtpBuf := make([]byte, 1400)
+			rtpBuf := make([]byte, 1200)
+
 			for {
 				i, readErr := track.Read(rtpBuf)
 				if readErr != nil {
 					log.Printf("Error: %v", readErr)
 					break
 				}
+				buf := rtpBuf[:i]
 
 				// ErrClosedPipe means we don't have any subscribers, this is ok if no peers have connected yet
-				if _, err = localTrack.Write(rtpBuf[:i]); err != nil && err != io.ErrClosedPipe {
+				if _, err = localTrack.Write(buf); err != nil && err != io.ErrClosedPipe {
 					log.Printf("Error: %v", err)
 					break
+				}
+
+				if track.Codec().Name == webrtc.VP8 {
+					broadcast.screenshotTaker.StreamBuf <- buf
 				}
 			}
 		})

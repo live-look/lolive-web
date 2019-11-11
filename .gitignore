@@ -1,6 +1,6 @@
 *.swp
 *.swo
 /pkg
-src/app/static/*.ivf
+*.ivf
 /camforchat
 .DS_Store
