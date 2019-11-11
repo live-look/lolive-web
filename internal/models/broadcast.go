@@ -2,9 +2,11 @@ package models
 
 import (
 	"camforchat/internal/usecases"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v2"
+	"github.com/pion/webrtc/v2/pkg/media/ivfwriter"
 	"io"
 	"log"
 	"time"
@@ -186,18 +188,48 @@ func (b *Broadcast) Run() {
 
 			log.Println("On track")
 
+			// Periodically dump to disk for previews
 			/**
-			ivffile, err := ivfwriter.New("/app/static/output.ivf")
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
 			codec := track.Codec()
-
 			if codec.Name == webrtc.VP8 {
-				log.Println("Got VP8 track, saving to disk as output.ivf")
-				uc.SaveToDisk(ivffile, track)
+				go func() {
+					var ivffile *ivfwriter.IVFWriter
+
+					tick := time.Tick(time.Minute * 1)
+
+					log.Println("Got VP8 track, saving to disk as output.ivf")
+
+					filename := fmt.Sprintf("/app/videos/tick-%d.ivf", time.Now().Unix())
+					ivffile, err := ivfwriter.New(filename)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+
+					for {
+						select {
+						case t := <-tick:
+							log.Println("Rotate file...")
+							if err := ivffile.Close(); err != nil {
+								log.Println(err)
+								continue
+							}
+							filename := fmt.Sprintf("/app/videos/tick-%d.ivf", t.Unix())
+							ivffile, err = ivfwriter.New(filename)
+							if err != nil {
+								log.Println(err)
+							}
+						default:
+							rtpPacket, err := track.ReadRTP()
+							if err != nil {
+								log.Println(err)
+							}
+							if err := ivffile.WriteRTP(rtpPacket); err != nil {
+								log.Println(err)
+							}
+						}
+					}
+				}()
 			}
 			**/
 
