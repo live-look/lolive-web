@@ -19,7 +19,7 @@ services:
       - default
       - frontend
     volumes:
-      - video_dumps:/app/videos
+      - ./../web/static/videos:/app/videos
       #  - /etc/group:/etc/group:ro
       #- /etc/passwd:/etc/passwd:ro
       #- /etc/shadow:/etc/shadow:ro

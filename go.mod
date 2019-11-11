@@ -11,6 +11,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lib/pq v1.2.0
 	github.com/pion/rtcp v1.2.1
+	github.com/pion/rtp v1.1.4
 	github.com/pion/webrtc/v2 v2.1.12
 	github.com/prometheus/client_golang v1.2.1
 	github.com/romanyx/polluter v1.2.2

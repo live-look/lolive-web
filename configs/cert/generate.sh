@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -eu
-org=static.camforchat.docker-ca
-domain=static.camforchat.docker
+org=camforchat.docker
+domain=camforchat.docker
 
 sudo trust anchor --remove ca.crt || true
 
 openssl genpkey -algorithm RSA -out ca.key
 openssl req -x509 -key ca.key -out ca.crt \
-    -subj "/CN=$org/O=$org"
+    -subj "/CN=*.$org/O=*.$org"
 
 openssl genpkey -algorithm RSA -out "$domain".key
 openssl req -new -key "$domain".key -out "$domain".csr \
-    -subj "/CN=$domain/O=$org"
+    -subj "/CN=*.$domain/O=*.$org"
 
 openssl x509 -req -in "$domain".csr -days 365 -out "$domain".crt \
     -CA ca.crt -CAkey ca.key -CAcreateserial \
@@ -19,7 +19,7 @@ openssl x509 -req -in "$domain".csr -days 365 -out "$domain".crt \
 basicConstraints = CA:FALSE
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer
-subjectAltName = DNS:$domain
+subjectAltName = DNS:*.$domain
 END
     )
 
