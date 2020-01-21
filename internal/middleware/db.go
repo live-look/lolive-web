@@ -17,11 +17,6 @@ func GetDb(ctx context.Context) (*sqlx.DB, bool) {
 	return db, ok
 }
 
-// NewDb creates new db connection link
-func NewDb(spec string) (*sqlx.DB, error) {
-	return sqlx.Connect("pgx", spec)
-}
-
 // Db is middleware for passing db link between requests
 func Db(c *sqlx.DB) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

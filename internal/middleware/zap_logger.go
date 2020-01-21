@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"go.uber.org/zap"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -44,20 +43,4 @@ func ZapLogger(l *zap.Logger) func(next http.Handler) http.Handler {
 
 		return http.HandlerFunc(h)
 	}
-}
-
-// NewZapLogger builds logger object
-func NewZapLogger() (*zap.Logger, error) {
-	var (
-		logger *zap.Logger
-		err    error
-	)
-
-	if os.Getenv(`APP_ENV`) == `production` {
-		logger, err = zap.NewProduction()
-	} else {
-		logger, err = zap.NewDevelopment()
-	}
-
-	return logger, err
 }
