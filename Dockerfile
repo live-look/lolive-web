@@ -7,7 +7,7 @@ COPY go.sum .
 RUN go mod download
 COPY ./ ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/camforchat
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server
 
 FROM alpine:latest
 
@@ -17,6 +17,8 @@ ENTRYPOINT ["tini", "--"]
 
 WORKDIR /app
 COPY --from=compile /app/web/template /app/templates
+# TODO: ARG APP_ENV
+COPY --from=compile /app/configs/.env.development /app/
 COPY --from=compile /app/server /app/
 
 EXPOSE 3001
