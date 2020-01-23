@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -x
 set -e
+set -x
 
-docker-compose -f deployments/docker-compose.yml down -v
+docker-compose -f deployments/docker-compose.development.yml down -v

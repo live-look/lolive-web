@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -x
 set -e
+set -x
 
-docker-compose -f deployments/docker-compose.yml run --rm camforchat-sqitch sqitch deploy default
+docker-compose -f deployments/docker-compose.development.yml run --rm camforchat-sqitch sqitch deploy default
