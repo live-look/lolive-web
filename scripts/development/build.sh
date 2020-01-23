@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -x
 set -e
+set -x
 
-docker-compose -f deployments/docker-compose.yml build camforchat-app
+docker-compose -f deployments/docker-compose.development.yml build camforchat-app
