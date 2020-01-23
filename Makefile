@@ -19,3 +19,6 @@ clean:
 
 sh:
 	scripts/developmen/sh.sh
+
+psql:
+	scripts/development/psql.sh
