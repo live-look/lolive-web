@@ -10,9 +10,11 @@ require (
 	github.com/jackc/pgx/v4 v4.2.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
+	github.com/jordan-wright/email v0.0.0-20200121133829-a0b5c5b58bb6
 	github.com/pion/rtcp v1.2.1
 	github.com/pion/rtp v1.2.1
 	github.com/pion/webrtc/v2 v2.1.18
+	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.3.0
 	github.com/spf13/viper v1.6.2 // indirect
 	github.com/volatiletech/authboss v2.3.0+incompatible
