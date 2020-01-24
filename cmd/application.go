@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/smtp"
 	"os"
 	"os/signal"
 	"regexp"
@@ -19,6 +20,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/valve"
 
+	"camforchat/internal"
 	"camforchat/internal/handlers"
 	appMiddleware "camforchat/internal/middleware"
 	"camforchat/internal/models"
@@ -129,13 +131,26 @@ func (app *Application) initAuthboss() {
 
 	ab.Config.Core.ViewRenderer = abrenderer.NewHTML("/auth", "templates")
 	ab.Config.Core.MailRenderer = abrenderer.NewEmail("/auth", "templates")
+	// SetCore(config *authboss.Config, readJSON, useUsername bool) {
+	defaults.SetCore(&ab.Config, false, false)
+
+	ab.Config.Core.BodyReader = abBodyReader()
+	ab.Config.Core.Mailer = internal.NewSMTPMailer(
+		os.Getenv("CAMFORCHAT_MAIL_SERVER"),
+		smtp.PlainAuth(
+			"",
+			os.Getenv("CAMFORCHAT_MAIL_USERNAME"),
+			os.Getenv("CAMFORCHAT_MAIL_PASSWORD"),
+			os.Getenv("CAMFORCHAT_MAIL_HOSTNAME"),
+		),
+	)
 
 	ab.Config.Modules.RegisterPreserveFields = []string{"email", "name"}
-
 	ab.Config.Modules.RoutesRedirectOnUnauthed = true
 
-	defaults.SetCore(&ab.Config, false, false)
-	ab.Config.Core.BodyReader = abBodyReader()
+	ab.Config.Mail.From = os.Getenv("CAMFORCHAT_MAIL_FROM")
+	ab.Config.Mail.RootURL = os.Getenv("CAMFORCHAT_ROOT_URL")
+	ab.Config.Mail.FromName = os.Getenv("CAMFORCHAT_MAIL_FROM_NAME")
 
 	if err := ab.Init(); err != nil {
 		log.Fatal("Application initialization failed: ", err)

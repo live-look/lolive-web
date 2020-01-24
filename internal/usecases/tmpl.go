@@ -24,11 +24,11 @@ func Tmpl(layout string, partial string) (*template.Template, error) {
 	}
 
 	tmpl := template.New(layout)
-	tmpl = tmpl.Funcs(template.FuncMap{"assetUrl": assetUrl})
+	tmpl = tmpl.Funcs(template.FuncMap{"assetURL": assetURL})
 
 	return tmpl.ParseFiles(lp, fp)
 }
 
-func assetUrl(assetPath string) string {
-	return os.Getenv("STATIC_ROOT_URL") + assetPath
+func assetURL(assetPath string) string {
+	return os.Getenv("CAMFORCHAT_STATIC_ROOT_URL") + assetPath
 }

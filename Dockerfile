@@ -11,7 +11,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server
 
 FROM alpine:latest
 
-RUN apk add tini
+RUN set -x; \
+  apk add tini ca-certificates
 
 ENTRYPOINT ["tini", "--"]
 
