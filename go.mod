@@ -7,6 +7,7 @@ require (
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-chi/valve v0.0.0-20170920024740-9e45288364f4
 	github.com/golang/mock v1.3.1 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/sessions v1.2.0
 	github.com/jackc/pgx/v4 v4.2.1
 	github.com/jmoiron/sqlx v1.2.0
