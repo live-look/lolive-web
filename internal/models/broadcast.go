@@ -4,7 +4,6 @@ import (
 	"camforchat/internal/usecases"
 	"context"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v2"
 	"io"
@@ -43,104 +42,46 @@ type Broadcast struct {
 
 	viewers map[int64]*Viewer
 
-	db *sqlx.DB
-
-	screenshotTaker *BroadcastScreenshot
-
 	webrtc *Webrtc
 
 	// Connection with browser (webcam of the broadcaster)
 	peerConnection *webrtc.PeerConnection
+
+	screenshotTaker *BroadcastScreenshot
 }
 
 // NewBroadcast creates new instance of models.Broadcast
-// db - instance of the database connection
-// webrtc - instance confgured Webrtc API
 // user - instance of User model
-func NewBroadcast(db *sqlx.DB, webrtc *Webrtc, user *User) (*Broadcast, error) {
+// webrtc - instance confgured Webrtc API
+func NewBroadcast(user *User, webrtc *webrtc) (*Broadcast, error) {
 	var err error
 
 	bc := &Broadcast{
 		ID:    uuid.New().String(),
 		State: BroadcastStateOffline,
 
-		UserID:   user.ID,
-		UserName: user.Name,
-
-		SDPChan:   make(chan string),
-		Publish:   make(chan *Viewer),
+		UserID:    user.ID,
+		UserName:  user.Name,
 		CreatedAt: time.Now(),
+
+		SDPChan: make(chan string),
+		Publish: make(chan *Viewer),
 
 		viewers: make(map[int64]*Viewer),
 		webrtc:  webrtc,
-		db:      db,
 	}
 
 	bc.screenshotTaker, err = NewBroadcastScreenshot(bc.ID)
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
 	bc.peerConnection, err = webrtc.NewPeerConnection()
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
-	return bc
-}
-
-// Save saves broadcast into the database
-func (b *Broadcast) Save() error {
-	insertQuery := `INSERT INTO broadcasts (id, user_id, state, created_at) VALUES ($1, $2)`
-	if err := b.db.Exec(
-		insertQuery,
-		b.ID,
-		b.UserID,
-		b.State,
-		b.CreatedAt,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-// FindBroadcast gets broadcast from db by ID
-func FindBroadcast(db *sqlx.DB, webrtc *Webrtc, ID int64) (*Broadcast, error) {
-	broadcast := NewBroadcast(db, webrtc, 0)
-
-	selectQuery := `SELECT b.*, u.name AS user_name
-					FROM broadcasts b
-					INNER JOIN users u
-					  ON u.id = b.user_id
-					WHERE b.id = $1`
-
-	err := db.Get(broadcast, selectQuery, ID)
-
-	return broadcast, err
-}
-
-// GetBroadcastsByState retrive list of online broadcasts
-func GetBroadcastsByState(db *sqlx.DB, state BroadcastState) ([]*Broadcast, error) {
-	var broadcasts []*Broadcast
-	selectQuery := `SELECT b.*, u.name AS user_name FROM broadcasts b INNER JOIN users u ON u.id = b.user_id WHERE state = $1 ORDER BY created_at DESC`
-
-	err := db.Select(&broadcasts, selectQuery, state)
-
-	return broadcasts, err
-}
-
-// SetState changes state of broadcast
-func (b *Broadcast) SetState(state BroadcastState) error {
-	updateQuery := `UPDATE broadcasts SET state = :state WHERE id = :id`
-	_, err := b.db.NamedExec(updateQuery,
-		map[string]interface{}{
-			"state": state,
-			"id":    b.ID,
-		})
-
-	return err
+	return bc, nil
 }
 
 // Join joins viewer to broadcast

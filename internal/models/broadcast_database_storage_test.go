@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 func TestSaveBroadcast(t *testing.T) {
@@ -11,13 +10,18 @@ func TestSaveBroadcast(t *testing.T) {
 	defer ctx.db.Close()
 
 	user := userFixture(t, ctx, "broadcast_creating@camforchat-test.net")
+	broadcast := NewBroadcast(ctx.db, ctx.webrtc, user.ID)
 
-	broadcast := broadcastFixture(user)
-
-	bs := NewBroadcastDbStorage(ctx.db)
-
-	err := bs.Save(broadcast)
+	err := broadcast.Save(user)
 	assert.Nil(t, err)
+
+	assert.Equal(t, BroadcastStateOffline, broadcast.State)
+	assert.Equal(t, user.ID, broadcast.UserID)
+	assert.Equal(t, user.Name, broadcast.UserName)
+	assert.NotEqual(t, 0, broadcast.ID)
+
+	assert.NotNil(t, broadcast.Publish)
+	assert.NotNil(t, broadcast.SDPChan)
 }
 
 func TestFindBroadcast(t *testing.T) {
@@ -25,14 +29,9 @@ func TestFindBroadcast(t *testing.T) {
 	defer ctx.db.Close()
 
 	user := userFixture(t, ctx, "broadcast_finding@camforchat-test.net")
-	broadcast := broadcastFixture(user)
+	broadcast := broadcastFixture(t, ctx, user)
 
-	bs := NewBroadcastDbStorage(ctx.db)
-
-	err := bs.Save(broadcast)
-	assert.Nil(t, err)
-
-	b, err := bs.Find(broadcast.ID)
+	b, err := FindBroadcast(ctx.db, ctx.webrtc, broadcast.ID)
 	assert.Nil(t, err)
 
 	assert.Equal(t, user.ID, b.UserID)

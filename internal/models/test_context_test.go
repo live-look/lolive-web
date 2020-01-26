@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -41,10 +42,12 @@ func userFixture(t *testing.T, ctx *testContext, email string) *User {
 	return u.(*User)
 }
 
-func broadcastFixture(t *testing.T, ctx *testContext, user *User) *Broadcast {
-	broadcast := NewBroadcast(ctx.db, ctx.webrtc, user.ID)
-	err := broadcast.Save(user)
-	assert.Nil(t, err)
-
-	return broadcast
+func broadcastFixture(user *User) *Broadcast {
+	return &Broadcast{
+		ID:        uuid.New().String(),
+		UserID:    user.ID,
+		UserName:  user.Name,
+		State:     BroadcastStateOffline,
+		CreatedAt: time.Now(),
+	}
 }
