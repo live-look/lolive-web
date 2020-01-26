@@ -3,6 +3,7 @@ package models
 import (
 	"camforchat/internal/usecases"
 	"context"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v2"
@@ -25,39 +26,84 @@ const (
 
 // Broadcast is struct of broadcaster
 type Broadcast struct {
-	ID        int64          `json:"id" db:"id"`
+	ID        string         `json:"id" db:"id"`
 	UserID    int64          `json:"user_id" db:"user_id"`
 	CreatedAt time.Time      `json:"created_at" db:"created_at"`
 	State     BroadcastState `json:"state" db:"state"`
 
 	UserName string `json:"user_name" db:"user_name"`
 
-	screenshotTaker *BroadcastScreenshot `json:"-" db:"-"`
-
-	LocalSessionDescription  string `json:"local_sdp" db:"-"`
+	// SDP from client
+	LocalSessionDescription string `json:"local_sdp" db:"-"`
+	// SDP on server
 	RemoteSessionDescription string `json:"remote_sdp" db:"-"`
 
 	SDPChan chan string  `json:"-" db:"-"`
 	Publish chan *Viewer `json:"-" db:"-"`
 
-	db *sqlx.DB
-
 	viewers map[int64]*Viewer
 
+	db *sqlx.DB
+
+	screenshotTaker *BroadcastScreenshot
+
 	webrtc *Webrtc
+
+	// Connection with browser (webcam of the broadcaster)
+	peerConnection *webrtc.PeerConnection
 }
 
-// NewBroadcast creates new instance of models.broadcast
-func NewBroadcast(db *sqlx.DB, webrtc *Webrtc, userID int64) *Broadcast {
-	return &Broadcast{
-		db:      db,
-		UserID:  userID,
-		SDPChan: make(chan string),
-		Publish: make(chan *Viewer),
+// NewBroadcast creates new instance of models.Broadcast
+// db - instance of the database connection
+// webrtc - instance confgured Webrtc API
+// user - instance of User model
+func NewBroadcast(db *sqlx.DB, webrtc *Webrtc, user *User) (*Broadcast, error) {
+	var err error
+
+	bc := &Broadcast{
+		ID:    uuid.New().String(),
+		State: BroadcastStateOffline,
+
+		UserID:   user.ID,
+		UserName: user.Name,
+
+		SDPChan:   make(chan string),
+		Publish:   make(chan *Viewer),
+		CreatedAt: time.Now(),
+
 		viewers: make(map[int64]*Viewer),
-		State:   BroadcastStateOffline,
 		webrtc:  webrtc,
+		db:      db,
 	}
+
+	bc.screenshotTaker, err = NewBroadcastScreenshot(bc.ID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	bc.peerConnection, err = webrtc.NewPeerConnection()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return bc
+}
+
+// Save saves broadcast into the database
+func (b *Broadcast) Save() error {
+	insertQuery := `INSERT INTO broadcasts (id, user_id, state, created_at) VALUES ($1, $2)`
+	if err := b.db.Exec(
+		insertQuery,
+		b.ID,
+		b.UserID,
+		b.State,
+		b.CreatedAt,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 // FindBroadcast gets broadcast from db by ID
@@ -85,18 +131,6 @@ func GetBroadcastsByState(db *sqlx.DB, state BroadcastState) ([]*Broadcast, erro
 	return broadcasts, err
 }
 
-// Save saves broadcast into the database
-func (b *Broadcast) Save(broadcastUser *User) error {
-	b.UserName = broadcastUser.Name
-	b.CreatedAt = time.Now()
-
-	insertQuery := `INSERT INTO broadcasts (user_id, state, created_at) VALUES ($1, $2, NOW()) RETURNING id`
-	if err := b.db.Get(&b.ID, insertQuery, broadcastUser.ID, b.State); err != nil {
-		return err
-	}
-	return nil
-}
-
 // SetState changes state of broadcast
 func (b *Broadcast) SetState(state BroadcastState) error {
 	updateQuery := `UPDATE broadcasts SET state = :state WHERE id = :id`
@@ -117,15 +151,9 @@ func (b *Broadcast) Join(viewer *Viewer) {
 // Run starts broadcast loop
 func (b *Broadcast) Run() {
 	var err error
+
 	// Run screenshot taker loop
-	b.screenshotTaker, err = NewBroadcastScreenshot(b.ID)
-	if err != nil {
-		log.Println("Fail to run: ", err)
-		return
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-
 	defer cancel()
 
 	b.screenshotTaker.TakeScreenshots(ctx)
@@ -134,13 +162,7 @@ func (b *Broadcast) Run() {
 	go func(broadcast *Broadcast) {
 		log.Println("Start broadcasting...")
 
-		peerConnection, err := broadcast.webrtc.NewPeerConnection()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		if _, err = peerConnection.AddTransceiver(webrtc.RTPCodecTypeVideo); err != nil {
+		if _, err = broadcast.peerConnection.AddTransceiver(webrtc.RTPCodecTypeVideo); err != nil {
 			log.Println(err)
 			return
 		}
@@ -244,4 +266,8 @@ func (b *Broadcast) Run() {
 			}
 		}
 	}(b)
+}
+
+func (b *Broadcast) Stop() chan (bool) {
+
 }

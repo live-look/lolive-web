@@ -11,6 +11,9 @@ down:
 migrate:
 	scripts/development/migrate.sh
 
+add_migration:
+	scripts/development/add_migration.sh
+
 build:
 	scripts/development/build.sh
 

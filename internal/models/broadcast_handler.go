@@ -13,14 +13,19 @@ type BroadcastHandler struct {
 
 	Publish   chan *Broadcast
 	Subscribe chan *Viewer
+
+	StopPublish   chan int64
+	StopSubscribe chan int64
 }
 
 // NewBroadcastHandler creates object of BroadcastHandler
 func NewBroadcastHandler() *BroadcastHandler {
 	return &BroadcastHandler{
-		broadcasts: make(map[int64]*Broadcast),
-		Publish:    make(chan *Broadcast),
-		Subscribe:  make(chan *Viewer),
+		broadcasts:    make(map[int64]*Broadcast),
+		Publish:       make(chan *Broadcast),
+		Subscribe:     make(chan *Viewer),
+		StopPublish:   make(chan int64),
+		StopSubscribe: make(chan int64),
 	}
 }
 
@@ -41,6 +46,10 @@ func (bh *BroadcastHandler) Run(ctx context.Context) {
 
 				broadcast := bh.broadcasts[viewer.BroadcastID]
 				broadcast.Join(viewer)
+			case broadcastID := <-bh.StopPublish:
+				// stop broadcast and remove it
+				<-bh.broadcasts[broadcastID].Stop()
+				delete(bh.broadcasts, broadcastID)
 			case <-ctx.Done():
 				// TODO: graceful shutdown all broadcasts
 				break
@@ -55,7 +64,17 @@ func (bh *BroadcastHandler) StartBroadcasting(broadcast *Broadcast) {
 	bh.Publish <- broadcast
 }
 
+// StopBroadcasting stops main loop of broadcaster and removes him
+func (bh *BroadcastHandler) StopBroadcasting(broadcastID int64) {
+	bh.StopPublish <- broadcastID
+}
+
 // StartView subsrcibes new viewer to given broadcast (property of viewer)
 func (bh *BroadcastHandler) StartView(viewer *Viewer) {
 	bh.Subscribe <- viewer
+}
+
+// StopView stops main loop of viewer and removes him
+func (bh *BroadcastHandler) StopView(viewerID int64) {
+	bh.StopSubscribe <- viewerID
 }
