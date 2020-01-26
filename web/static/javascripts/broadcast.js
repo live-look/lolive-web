@@ -15,7 +15,6 @@ app.modules.broadcast = (function(self) {
     }
 
     peerConnection.onicecandidate = function(event) {
-      console.log(event);
       if (event.candidate === null) {
         _enableButton();
       }
@@ -26,7 +25,12 @@ app.modules.broadcast = (function(self) {
     navigator.mediaDevices.getUserMedia({video: true, audio: false}).then(function(stream) {
       yourSelfVideo.srcObject = stream;
 
-      peerConnection.addStream(stream);
+      // addStream is obsolete
+      // peerConnection.addStream(stream);
+      for (const track of stream.getTracks()) {
+        peerConnection.addTrack(track);
+      }
+
       peerConnection.createOffer().then(function(description) {
         peerConnection.setLocalDescription(description);
       }).catch(console.error);
@@ -61,7 +65,7 @@ app.modules.broadcast = (function(self) {
   }
 
   function _stopSession() {
-
+    peerConnection.close();
   }
 
   function _enableButton() {

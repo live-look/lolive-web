@@ -7,3 +7,4 @@ add_confirm_fields 2019-10-05T13:48:45Z root <root@5cbd7e2d2366> # Adds confirm 
 create_broadcasts 2019-10-09T07:07:55Z root <root@f7b8008282f1> # Adds table for broadcasts logging
 messages 2019-11-02T15:43:25Z Andrew <isqad88@gmail.com> # Adds messages relation
 accounts 2019-11-03T13:13:16Z Andrew <isqad88@gmail.com> # Adds accounts for billing
+convert_broadcast_id_to_uuid 2020-01-26T12:46:01Z Andrew <isqad88@gmail.com> # Converts broadcasts.id to uuid
