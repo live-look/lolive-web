@@ -32,7 +32,7 @@ func setupTestContext(t *testing.T) *testContext {
 }
 
 func userFixture(t *testing.T, ctx *testContext, email string) *User {
-	userStorer := NewUserStorer(ctx.db)
+	userStorer := NewUserDbStorage(ctx.db)
 	usr := &User{Name: email, Email: email, Password: "qwerty1234567890"}
 	err := userStorer.Create(ctx.context, usr)
 	assert.Nil(t, err)
