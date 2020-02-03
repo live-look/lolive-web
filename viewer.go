@@ -21,7 +21,7 @@ const (
 // Viewer struct
 type Viewer struct {
 	ID          int64       `json:"id" db:"id"`
-	BroadcastID int64       `json:"broadcast_id" db:"broadcast_id"`
+	BroadcastID string      `json:"broadcast_id" db:"broadcast_id"`
 	UserID      int64       `json:"user_id" db:"user_id"`
 	State       ViewerState `json:"state" db:"state"`
 	JoinedAt    time.Time   `json:"joined_at" db:"joined_at"`
@@ -38,7 +38,7 @@ type Viewer struct {
 }
 
 // NewViewer creates new Viewer object with db conn, userID and broadcastID
-func NewViewer(db *sqlx.DB, webrtc *Webrtc, userID int64, broadcastID int64) *Viewer {
+func NewViewer(db *sqlx.DB, webrtc *Webrtc, userID int64, broadcastID string) *Viewer {
 	return &Viewer{
 		db:          db,
 		UserID:      userID,

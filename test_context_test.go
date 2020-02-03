@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 )

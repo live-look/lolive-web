@@ -1,40 +1,31 @@
-package handlers
+package camforchat
 
 import (
 	"encoding/json"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 	"net/http"
-	"strconv"
-
-	"camforchat/internal"
-	appMiddleware "camforchat/internal/middleware"
 )
 
 // ViewersCreate handles POST /broadcasts/{broadcastID}/viewers
 // creates new Viewer and runs it
 // TODO: extract API
 func ViewersCreate(w http.ResponseWriter, r *http.Request) {
-	logger, _ := appMiddleware.GetLog(r.Context())
+	logger, _ := GetLogger(r.Context())
 
-	broadcastID, err := strconv.ParseInt(chi.URLParam(r, "broadcastID"), 10, 64)
-	if err != nil {
-		logger.Error("parse broadcastID failed", zap.Error(err))
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
+	broadcastID := chi.URLParam(r, "broadcastID")
 
-	db, _ := appMiddleware.GetDb(r.Context())
-	webrtc, _ := appMiddleware.GetWebrtcAPI(r.Context())
-	broadcast, err := internal.FindBroadcast(db, webrtc, broadcastID)
+	db, _ := GetDb(r.Context())
+	webrtc, _ := GetWebrtcAPI(r.Context())
+	broadcast, err := NewBroadcastDbStorage(db).Find(broadcastID)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
 
-	user, _ := appMiddleware.GetCurrentUser(r.Context())
+	user, _ := GetCurrentUser(r.Context())
 
-	viewer := internal.NewViewer(db, webrtc, user.ID, broadcast.ID)
+	viewer := NewViewer(db, webrtc, user.ID, broadcast.ID)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(viewer); err != nil {
 		logger.Error("decoding request body failed", zap.Error(err))
@@ -48,9 +39,9 @@ func ViewersCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	broadcastHandler, _ := appMiddleware.GetBroadcastHandler(r.Context())
+	//broadcastHandler, _ := GetBroadcastHandler(r.Context())
 	logger.Info("start viewer")
-	broadcastHandler.StartView(viewer)
+	//broadcastHandler.StartView(viewer)
 
 	remoteSdp := <-viewer.SDPChan
 	viewer.RemoteSessionDescription = remoteSdp

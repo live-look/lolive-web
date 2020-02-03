@@ -1,10 +1,15 @@
 package camforchat
 
-var (
-	CtxKeyBroadcastStorer = ContextKey("BroadcastStorer")
+import (
+	"context"
 )
 
-type broadcastStorer interface {
+var (
+	ctxKeyBroadcastStorer = ContextKey("BroadcastStorer")
+)
+
+// BroadcastStorer is interface for storing Broadcast
+type BroadcastStorer interface {
 	Save(*Broadcast) error
 	Find(ID string) (*Broadcast, error)
 	FindByState(s BroadcastState) ([]*Broadcast, error)
@@ -12,7 +17,7 @@ type broadcastStorer interface {
 }
 
 // GetBroadcastStorer returns broadcast storer from context
-func GetBroadcastStorer(ctx context.Context) (broadcastStorer, bool) {
-	l, ok := ctx.Value(CtxKeyBroadcastStorer).(broadcastStorer)
+func GetBroadcastStorer(ctx context.Context) (BroadcastStorer, bool) {
+	l, ok := ctx.Value(ctxKeyBroadcastStorer).(BroadcastStorer)
 	return l, ok
 }

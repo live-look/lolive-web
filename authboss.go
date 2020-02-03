@@ -1,7 +1,6 @@
-package middleware
+package camforchat
 
 import (
-	"camforchat/internal"
 	"context"
 	"github.com/go-chi/chi/middleware"
 	"github.com/volatiletech/authboss"
@@ -9,7 +8,7 @@ import (
 )
 
 var (
-	ctxKeyAuthBoss = internal.ContextKey("Authboss")
+	ctxKeyAuthBoss = ContextKey("Authboss")
 )
 
 // GetAuthBoss returns Authboss object from context
@@ -19,8 +18,8 @@ func GetAuthBoss(ctx context.Context) (*authboss.Authboss, bool) {
 	return u, ok
 }
 
-// AuthBoss is middleware for store Authboss between requests
-func AuthBoss(ab *authboss.Authboss) func(next http.Handler) http.Handler {
+// AuthBossMiddleware is middleware for store Authboss between requests
+func AuthBossMiddleware(ab *authboss.Authboss) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)

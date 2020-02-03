@@ -2,29 +2,35 @@ package camforchat
 
 import (
 	"context"
+	"github.com/go-chi/chi/middleware"
 	"log"
+	"net/http"
+)
+
+var (
+	ctxKeyBroadcastHandler = ContextKey("BroadcastHandler")
 )
 
 // BroadcastHandler handles by broadcasts
-// keeps all online broadcast in map[int64]*Broadcast
+// keeps all online broadcast in map[string]*Broadcast (uuid => *Broadcast)
 // runs new created broadcasts
 type BroadcastHandler struct {
-	broadcasts map[int64]*Broadcast
+	broadcasts map[string]*Broadcast
 
 	Publish   chan *Broadcast
 	Subscribe chan *Viewer
 
-	StopPublish   chan int64
+	StopPublish   chan string
 	StopSubscribe chan int64
 }
 
 // NewBroadcastHandler creates object of BroadcastHandler
 func NewBroadcastHandler() *BroadcastHandler {
 	return &BroadcastHandler{
-		broadcasts:    make(map[int64]*Broadcast),
+		broadcasts:    make(map[string]*Broadcast),
 		Publish:       make(chan *Broadcast),
 		Subscribe:     make(chan *Viewer),
-		StopPublish:   make(chan int64),
+		StopPublish:   make(chan string),
 		StopSubscribe: make(chan int64),
 	}
 }
@@ -39,7 +45,7 @@ func (bh *BroadcastHandler) Run(ctx context.Context) {
 			case broadcast := <-bh.Publish:
 				bh.broadcasts[broadcast.ID] = broadcast
 
-				broadcast.Run()
+				broadcast.Run(ctx)
 				log.Println("broadcast runned")
 			case viewer := <-bh.Subscribe:
 				log.Println("Found broadcast")
@@ -65,7 +71,7 @@ func (bh *BroadcastHandler) StartBroadcasting(broadcast *Broadcast) {
 }
 
 // StopBroadcasting stops main loop of broadcaster and removes him
-func (bh *BroadcastHandler) StopBroadcasting(broadcastID int64) {
+func (bh *BroadcastHandler) StopBroadcasting(broadcastID string) {
 	bh.StopPublish <- broadcastID
 }
 
@@ -77,4 +83,24 @@ func (bh *BroadcastHandler) StartView(viewer *Viewer) {
 // StopView stops main loop of viewer and removes him
 func (bh *BroadcastHandler) StopView(viewerID int64) {
 	bh.StopSubscribe <- viewerID
+}
+
+// GetBroadcastHandler returns BroadcastHandler from context
+func GetBroadcastHandler(ctx context.Context) (*BroadcastHandler, bool) {
+	u, ok := ctx.Value(ctxKeyBroadcastHandler).(*BroadcastHandler)
+
+	return u, ok
+}
+
+// BroadcastHandlerMiddleware is middleware for passing BroadcastHandler between requests
+func BroadcastHandlerMiddleware(bh *BroadcastHandler) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		h := func(w http.ResponseWriter, r *http.Request) {
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+			r = r.WithContext(context.WithValue(r.Context(), ctxKeyBroadcastHandler, bh))
+			next.ServeHTTP(ww, r)
+		}
+		return http.HandlerFunc(h)
+	}
 }

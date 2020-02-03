@@ -88,7 +88,7 @@ func (b *Broadcast) Join(viewer *Viewer) {
 }
 
 // Run starts broadcast loop
-// context must keep logger, broadcastStorer
+// context must keep logger, BroadcastStorer
 func (b *Broadcast) Run(ctx context.Context) error {
 	var err error
 
@@ -214,15 +214,18 @@ func (b *Broadcast) Run(ctx context.Context) error {
 		for {
 			select {
 			case viewer := <-b.Publish:
-				logger.Info("Viewer joined to broadcast", zap.String("ID", broadcast.ID), zap.Int64(viewer.ID))
+				logger.Info("Viewer joined to broadcast", zap.String("ID", broadcast.ID), zap.Int64("Viewer ID", viewer.ID))
 
 				b.viewers[viewer.ID] = viewer
 				viewer.Run(localTrack)
 			}
 		}
 	}(b)
+
+	return nil
 }
 
+// Stop stops broadcasting
 func (b *Broadcast) Stop() chan (bool) {
-
+	return make(chan bool)
 }
