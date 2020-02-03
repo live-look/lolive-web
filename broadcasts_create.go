@@ -1,23 +1,26 @@
-package handlers
+package camforchat
 
 import (
 	"encoding/json"
 	"go.uber.org/zap"
 	"net/http"
-
-	"camforchat/internal"
-	appMiddleware "camforchat/internal/middleware"
 )
 
 // BroadcastsCreate handles creating broadcast
 // TODO: extract into API
 func BroadcastsCreate(w http.ResponseWriter, r *http.Request) {
-	db, _ := appMiddleware.GetDb(r.Context())
-	logger, _ := appMiddleware.GetLog(r.Context())
-	user, _ := appMiddleware.GetCurrentUser(r.Context())
-	webrtc, _ := appMiddleware.GetWebrtcAPI(r.Context())
+	db, _ := GetDb(r.Context())
+	logger, _ := GetLogger(r.Context())
+	user, _ := GetCurrentUser(r.Context())
+	webrtc, _ := GetWebrtcAPI(r.Context())
 
-	broadcast := internal.NewBroadcast(user.ID, user.Name, webrtc)
+	broadcast, err := NewBroadcast(user.ID, user.Name, webrtc)
+	if err != nil {
+		logger.Error("initialize broadcast failed", zap.Error(err))
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(broadcast); err != nil {
 		logger.Error("decoding request body failed", zap.Error(err))
@@ -25,13 +28,13 @@ func BroadcastsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := broadcast.Save(user); err != nil {
+	if err := NewBroadcastDbStorage(db).Save(broadcast); err != nil {
 		logger.Error("creating broadcast failed", zap.Error(err))
 		http.Error(w, http.StatusText(422), 422)
 		return
 	}
 
-	broadcastHandler, _ := appMiddleware.GetBroadcastHandler(r.Context())
+	broadcastHandler, _ := GetBroadcastHandler(r.Context())
 	broadcastHandler.StartBroadcasting(broadcast)
 
 	remoteSdp := <-broadcast.SDPChan

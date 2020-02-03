@@ -1,14 +1,11 @@
-package handlers
+package camforchat
 
 import (
-	"camforchat/internal"
-	appMiddleware "camforchat/internal/middleware"
-	"camforchat/internal/usecases"
 	"github.com/go-chi/chi"
 	"github.com/volatiletech/authboss"
+	"gitlab.com/isqad/camforchat/utils"
 	"go.uber.org/zap"
 	"net/http"
-	"strconv"
 )
 
 // BroadcastsShow handles view of runned broadcast
@@ -22,24 +19,18 @@ func BroadcastsShow(w http.ResponseWriter, r *http.Request) {
 		data = dataIntf.(authboss.HTMLData)
 	}
 
-	logger, _ := appMiddleware.GetLog(r.Context())
+	logger, _ := GetLogger(r.Context())
 
-	broadcastID, err := strconv.ParseInt(chi.URLParam(r, "broadcastID"), 10, 64)
-	if err != nil {
-		logger.Error("parse broadcastID failed", zap.Error(err))
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
+	broadcastID := chi.URLParam(r, "broadcastID")
 
-	db, _ := appMiddleware.GetDb(r.Context())
-	webrtc, _ := appMiddleware.GetWebrtcAPI(r.Context())
-	broadcast, err := internal.FindBroadcast(db, webrtc, broadcastID)
+	db, _ := GetDb(r.Context())
+	broadcast, err := NewBroadcastDbStorage(db).Find(broadcastID)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
 
-	t, err := usecases.Tmpl("layout.html", "view.html")
+	t, err := utils.Tmpl("layout.html", "view.html")
 	if err != nil {
 		logger.Error("error during parse template", zap.Error(err))
 		http.Error(w, http.StatusText(404), 404)

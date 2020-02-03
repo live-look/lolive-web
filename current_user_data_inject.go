@@ -1,7 +1,6 @@
-package middleware
+package camforchat
 
 import (
-	"camforchat/internal"
 	"context"
 	"github.com/go-chi/chi/middleware"
 	"github.com/volatiletech/authboss"
@@ -11,25 +10,25 @@ import (
 )
 
 var (
-	ctxKeyCurrentUser = internal.ContextKey("CurrentUser")
+	ctxKeyCurrentUser = ContextKey("CurrentUser")
 )
 
 // GetCurrentUser extract current user from context
-func GetCurrentUser(ctx context.Context) (*internal.User, bool) {
-	user, ok := ctx.Value(ctxKeyCurrentUser).(*internal.User)
+func GetCurrentUser(ctx context.Context) (*User, bool) {
+	user, ok := ctx.Value(ctxKeyCurrentUser).(*User)
 	return user, ok
 }
 
-// CurrentUserDataInject is middleware for injecting currentUser data
-func CurrentUserDataInject(ab *authboss.Authboss) func(next http.Handler) http.Handler {
+// CurrentUserMiddleware is middleware for injecting currentUser data
+func CurrentUserMiddleware(ab *authboss.Authboss) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			var (
 				currentUserID   int64
 				currentUserName string
-				user            *internal.User
+				user            *User
 			)
-			logger, ok := GetLog(r.Context())
+			logger, ok := GetLogger(r.Context())
 			if !ok {
 				log.Println("Can't get logger from context")
 				http.Error(w, http.StatusText(500), 500)
@@ -45,7 +44,7 @@ func CurrentUserDataInject(ab *authboss.Authboss) func(next http.Handler) http.H
 			}
 
 			if currentUser != nil {
-				user = currentUser.(*internal.User)
+				user = currentUser.(*User)
 				currentUserID = user.ID
 				currentUserName = user.Name
 			}

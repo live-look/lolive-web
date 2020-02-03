@@ -20,8 +20,6 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/valve"
 
-	"gitlab.com/isqad/camforchat/handlers"
-	appMiddleware "gitlab.com/isqad/camforchat/middleware"
 	"gitlab.com/isqad/camforchat/utils"
 
 	"github.com/jmoiron/sqlx"
@@ -34,11 +32,10 @@ import (
 
 // Application structure
 type Application struct {
-	Log *zap.Logger
-	DB  *sqlx.DB
-
-	ab  *authboss.Authboss
-	env AppEnv
+	env    AppEnv
+	logger *zap.Logger
+	db     *sqlx.DB
+	ab     *authboss.Authboss
 }
 
 // Getenv returns current application environment
@@ -71,35 +68,30 @@ func (app *Application) initLog() {
 		log.Fatal("Application initialization failed: ", err)
 	}
 
-	app.Log = logger
+	app.logger = logger
 }
 
 func (app *Application) initDB() {
-	dbSpec := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+	spec := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
 		os.Getenv("CAMFORCHAT_DB_USER"),
 		os.Getenv("CAMFORCHAT_DB_PASSWORD"),
 		os.Getenv("CAMFORCHAT_DB_HOST"),
 		os.Getenv("CAMFORCHAT_DB_NAME"),
 	)
 
-	db, err := sqlx.Connect("pgx", dbSpec)
+	db, err := NewDb(spec)
 	if err != nil {
 		log.Fatal("Application initialization failed: ", err)
 	}
 
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Application initialization failed: ", err)
-	}
-
-	app.DB = db
+	app.db = db
 }
 
 func (app *Application) initAuthboss() {
 	ab := authboss.New()
 	ab.Config.Paths.RootURL = os.Getenv("CAMFORCHAT_ROOT_URL")
 
-	ab.Config.Storage.Server = NewUserStorer(app.DB)
+	ab.Config.Storage.Server = NewUserStorer(app.db)
 
 	userSessionStore := NewUserSessionStore()
 	ab.Config.Storage.SessionState = userSessionStore.SessionStorer
@@ -153,34 +145,38 @@ func (app *Application) Run() {
 	broadcastHandler := NewBroadcastHandler()
 	broadcastHandler.Run(broadcastHandlerContext)
 
-	broadcastHanderMiddleware := appMiddleware.BroadcastHandler(broadcastHandler)
+	broadcastHanderMiddleware := BroadcastHandlerMiddleware(broadcastHandler)
 
 	wrtc := NewWebrtc()
-	webrtcMiddleware := appMiddleware.WebrtcAPI(wrtc)
+	webrtcMiddleware := WebrtcAPIMiddleware(wrtc)
 
 	// Web server, routing
 	r := chi.NewRouter()
 	r.Use(
 		middleware.RealIP,
-		appMiddleware.ZapLogger(app.Log),
-		appMiddleware.Db(app.DB),
+		LoggerMiddleware(app.logger),
+		DbMiddleware(app.db),
 		app.ab.LoadClientStateMiddleware,
-		appMiddleware.CurrentUserDataInject(app.ab),
+		CurrentUserMiddleware(app.ab),
 		middleware.Recoverer,
 		webrtcMiddleware,
 	)
 
 	r.Route("/broadcasts", func(r chi.Router) {
 		// Require auth
-		r.Use(app.ab.LoadClientStateMiddleware, authboss.Middleware2(app.ab, authboss.RequireNone, authboss.RespondRedirect), confirm.Middleware(app.ab))
+		r.Use(
+			app.ab.LoadClientStateMiddleware,
+			authboss.Middleware2(app.ab, authboss.RequireNone, authboss.RespondRedirect),
+			confirm.Middleware(app.ab),
+		)
 
-		r.Get("/new", handlers.BroadcastsNew)
+		r.Get("/new", BroadcastsNew)
 		r.With(broadcastHanderMiddleware).
-			Post("/", handlers.BroadcastsCreate)
-		r.Get("/{broadcastID}", handlers.BroadcastsShow)
+			Post("/", BroadcastsCreate)
+		r.Get("/{broadcastID}", BroadcastsShow)
 
 		r.With(broadcastHanderMiddleware).
-			Post("/{broadcastID}/viewers", handlers.ViewersCreate)
+			Post("/{broadcastID}/viewers", ViewersCreate)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -189,14 +185,14 @@ func (app *Application) Run() {
 	})
 
 	r.Handle("/metrics", promhttp.Handler())
-	r.Get("/", handlers.HomePage)
+	r.Get("/", HomePage)
 
 	valv := valve.New()
 	baseCtx := valv.Context()
 	server := &http.Server{
 		Addr:         os.Getenv("CAMFORCHAT_LISTEN_ADDR"),
 		Handler:      chi.ServerBaseContext(baseCtx, r),
-		ErrorLog:     log.New(&utils.FwdToZapWriter{Logger: app.Log}, "", 0),
+		ErrorLog:     log.New(&utils.FwdToZapWriter{Logger: app.logger}, "", 0),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -232,14 +228,14 @@ func (app *Application) Run() {
 
 	err := server.ListenAndServe()
 	if err != nil {
-		app.Log.Fatal("Start server is failed", zap.Error(err))
+		app.logger.Fatal("Start server is failed", zap.Error(err))
 	}
 }
 
 // Shutdown stops application gracefully
 func (app *Application) Shutdown() {
-	app.Log.Sync()
-	app.DB.Close()
+	app.logger.Sync()
+	app.db.Close()
 }
 
 func abBodyReader() defaults.HTTPBodyReader {

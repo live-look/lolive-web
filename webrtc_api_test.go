@@ -1,17 +1,16 @@
-package middleware
+package camforchat
 
 import (
-	"camforchat/internal"
 	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestGetWebrtcAPI(t *testing.T) {
-	wrtc := internal.NewWebrtc()
+	wrtc := NewWebrtc()
 	ctx := context.WithValue(context.Background(), ctxKeyWebrtcAPI, wrtc)
 	w, ok := GetWebrtcAPI(ctx)
 
 	assert.True(t, ok)
-	assert.IsType(t, internal.NewWebrtc(), w)
+	assert.IsType(t, NewWebrtc(), w)
 }

@@ -1,10 +1,8 @@
-package handlers
+package camforchat
 
 import (
-	"camforchat/internal"
-	appMiddleware "camforchat/internal/middleware"
-	"camforchat/internal/usecases"
 	"github.com/volatiletech/authboss"
+	"gitlab.com/isqad/camforchat/utils"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -20,17 +18,17 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 		data = dataIntf.(authboss.HTMLData)
 	}
 
-	logger, _ := appMiddleware.GetLog(r.Context())
-	db, _ := appMiddleware.GetDb(r.Context())
+	logger, _ := GetLogger(r.Context())
+	db, _ := GetDb(r.Context())
 
-	broadcasts, err := internal.GetBroadcastsByState(db, internal.BroadcastStateOnline)
+	broadcasts, err := NewBroadcastDbStorage(db).FindByState(BroadcastStateOnline)
 	if err != nil {
 		logger.Error("error during retreive broadcasts", zap.Error(err))
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	t, err := usecases.Tmpl("layout.html", "index.html")
+	t, err := utils.Tmpl("layout.html", "index.html")
 	if err != nil {
 		logger.Error("error during parse template", zap.Error(err))
 		http.Error(w, http.StatusText(404), 404)
