@@ -91,7 +91,7 @@ func (app *Application) initAuthboss() {
 	ab := authboss.New()
 	ab.Config.Paths.RootURL = os.Getenv("CAMFORCHAT_ROOT_URL")
 
-	ab.Config.Storage.Server = NewUserStorer(app.db)
+	ab.Config.Storage.Server = NewUserDbStorage(app.db)
 
 	userSessionStore := NewUserSessionStore()
 	ab.Config.Storage.SessionState = userSessionStore.SessionStorer
