@@ -19,6 +19,11 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// GetNamereturns user name
+func (u *User) GetName() string {
+	return u.Name
+}
+
 // GetEmail returns user email
 func (u *User) GetEmail() string {
 	return u.Email
