@@ -4,3 +4,4 @@
 *.ivf
 /camforchat
 .DS_Store
+/web/application/node_modules/
