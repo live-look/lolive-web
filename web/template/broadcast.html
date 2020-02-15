@@ -26,27 +26,8 @@
 {{end}}
 
 {{define "body"}}
-<div class="container">
-  <div class="row">
-    <div class="col">
-      <div class="alert alert-danger js-alert-danger">
-      </div>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      <div class="card broadcasting-card">
-        <video id="video" width="320" height="240" autoplay></video>
-        <div class="card-body">
-          <h5>{{.UserData.current_user_name}}' room</h5>
-          <button disabled="disabled" type="button" class="btn btn-outline-success js-switch-broadcast">Start broadcasting</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
 {{end}}
 
 {{define "javascripts"}}
-<script type="application/javascript" src="{{ assetURL "/assets/javascripts/broadcast.js" }}"></script>
 {{end}}

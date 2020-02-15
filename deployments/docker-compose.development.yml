@@ -2,10 +2,10 @@ version: '3'
 
 services:
   camforchat-app:
+    init: true
     build:
       context: ./..
     image: isqad88/camforchat_app:latest
-    # user: $UID:$GID
     env_file:
       - ./../configs/.env.development
     environment:
@@ -20,14 +20,9 @@ services:
       - frontend
     volumes:
       - ./../web/static/videos:/app/videos
-      #  - /etc/group:/etc/group:ro
-      #- /etc/passwd:/etc/passwd:ro
-      #- /etc/shadow:/etc/shadow:ro
     depends_on:
       - camforchat-pgbouncer
       - camforchat-assets
-    stdin_open: true
-    tty: true
     logging:
       driver: "json-file"
       options:

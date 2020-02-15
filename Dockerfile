@@ -1,3 +1,4 @@
+# Build
 FROM golang:1.12 AS compile
 
 WORKDIR /app
@@ -9,12 +10,11 @@ COPY ./ ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server
 
+# Production
 FROM alpine:latest
 
 RUN set -x; \
-  apk add tini ca-certificates
-
-ENTRYPOINT ["tini", "--"]
+  apk add ca-certificates
 
 WORKDIR /app
 COPY --from=compile /app/web/template /app/templates
