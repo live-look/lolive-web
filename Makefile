@@ -21,7 +21,7 @@ clean:
 	scripts/development/cleanup.sh
 
 sh:
-	scripts/developmen/sh.sh
+	scripts/development/sh.sh
 
 psql:
 	scripts/development/psql.sh

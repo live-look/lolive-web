@@ -12,16 +12,7 @@
   </head>
   <body>
     {{template "navigation" . }}
+
     {{template "body" . }}
-
-    <script type="application/javascript">
-      var app = app || {
-        modules: {},
-        config: {}
-      };
-    </script>
-    <script type="application/javascript" src="{{ assetURL "/assets/javascripts/modules_loader.js" }}"></script>
-
-    {{template "javascripts" . }}
   </body>
 </html>

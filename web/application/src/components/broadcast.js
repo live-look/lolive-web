@@ -1,15 +1,20 @@
-app.modules.broadcast = (function(self) {
-  var peerConnection = new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: 'stun:stun.l.google.com:19302'
-      }
-    ]
-  }),
-  yourSelfVideo = document.getElementById('video'),
-  broadcastingEnabled = false;
+'use strict';
 
-  function _createSession() {
+const peerConnection = new RTCPeerConnection({
+  iceServers: [
+    {
+      urls: 'stun:stun.l.google.com:19302'
+    }
+  ]
+});
+
+class Broadcast extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { broadcastingEnabled = false };
+  }
+
+  createSession() {
     peerConnection.oniceconnectionstatechange = function(event) {
       console.log(peerConnection.iceConnectionState);
     }
@@ -21,7 +26,9 @@ app.modules.broadcast = (function(self) {
     }
   }
 
-  function _setupWebcam() {
+  setupWebcam() {
+    let yourSelfVideo = document.getElementById('video');
+
     navigator.mediaDevices.getUserMedia({video: true, audio: false}).then(function(stream) {
       yourSelfVideo.srcObject = stream;
 
@@ -46,7 +53,7 @@ app.modules.broadcast = (function(self) {
     });
   }
 
-  function _startSession() {
+  startSession() {
     fetch('/broadcasts', {
       method: 'POST',
       headers: {
@@ -64,11 +71,11 @@ app.modules.broadcast = (function(self) {
       });
   }
 
-  function _stopSession() {
+  stopSession() {
     peerConnection.close();
   }
 
-  function _enableButton() {
+  enableButton() {
     var btn = document.getElementsByClassName('js-switch-broadcast')[0]
 
     btn.addEventListener('click', (event) => {
@@ -93,10 +100,11 @@ app.modules.broadcast = (function(self) {
     btn.removeAttribute('disabled');
   }
 
-  self.ready = function() {
-    _createSession();
-    _setupWebcam();
-  };
-
-  return self;
-})(app.modules.broadcast || {});
+  render() {
+    return (
+      <div>
+        <p>Hello, broadcaster!</p>
+      </div>
+    )
+  }
+}
