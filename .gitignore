@@ -2,6 +2,7 @@
 *.swo
 /pkg
 *.ivf
-/camforchat
+/bin/*
+/cmd/bin/*
 .DS_Store
 /web/application/node_modules/
