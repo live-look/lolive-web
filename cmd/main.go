@@ -1,17 +1,11 @@
 package main
 
 import (
-	_ "github.com/jackc/pgx/v4/stdlib"
-	_ "github.com/volatiletech/authboss/auth"
-	_ "github.com/volatiletech/authboss/confirm"
-	_ "github.com/volatiletech/authboss/logout"
-	_ "github.com/volatiletech/authboss/register"
-
-	"gitlab.com/isqad/camforchat"
+	"github.com/live-look/lolive-web/internal/server"
 )
 
 func main() {
-	app := &camforchat.Application{}
+	app := &server.App{}
 
-	app.Run()
+	app.Start()
 }
