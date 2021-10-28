@@ -2,7 +2,10 @@
 *.swo
 /pkg
 *.ivf
-/bin/*
+/bin
 /cmd/bin/*
 .DS_Store
-/web/application/node_modules/
+/web/assets/javascripts/node_modules
+/web/assets/javascripts/dist
+/configs/cert/*
+!/configs/cert/generate.sh
